@@ -1,0 +1,52 @@
+{
+  "name": "@tinytales/_underline",
+  "version": "0.1.1",
+  "description": "Tiny gui for pixijs inspired by DearImGui and CSS",
+  "author": "Cristian Cornea",
+  "email": "tinytales@mailbox.org",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tinytales/_underline.git"
+  },
+  "keywords": [
+    "pixijs",
+    "game",
+    "canvas",
+    "tinytales"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "examples",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "COMING SOON TM"
+  },
+  "devDependencies": {
+    "prettier": "3.1.1",
+    "tsup": "^8.0.1",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8",
+    "vitest": "^1.1.0"
+  },
+  "dependencies": {
+    "pixi.js": "^7.3.2"
+  }
+}
