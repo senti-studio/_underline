@@ -1,5 +1,3 @@
-## TinyGui
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/media/underline_header_dark.png">
   <source media="(prefers-color-scheme: light)" srcset="/media/underline_header_light.png">
@@ -7,7 +5,8 @@
 </picture>
 
 > Tiny Gui for PixiJs inspired by DearImGui and CSS
-> 
+
+> [!CAUTION]
 > Heavy work in progress, not recommended for production yet.
 
 
@@ -46,7 +45,7 @@ _.End()
 
 Soon i will add more examples into the **_/example_** folder.
 
-## Todo
+## Roadmap
 
 - [ ] Key / Mouse Events (v0.3)
 - [ ] Text / Images (v0.4)
