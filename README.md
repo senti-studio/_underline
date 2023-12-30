@@ -1,11 +1,15 @@
 ## TinyGui
 
-Tiny Gui for PixiJs inspired by DearImGui and CSS
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/media/underline_header_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="/media/underline_header_light.png">
+  <img alt="_underline header" src="/media/underline_header_light.png">
+</picture>
 
-```
-Small gui library i use for my own project.
-Heavy work in progress, not recommended for production yet.
-```
+> Tiny Gui for PixiJs inspired by DearImGui and CSS
+> 
+> Heavy work in progress, not recommended for production yet.
+
 
 ## Install
 
