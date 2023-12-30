@@ -4,17 +4,19 @@
   <img alt="_underline header" src="/media/underline_header_light.png">
 </picture>
 
-> Tiny Gui for PixiJs inspired by DearImGui and CSS
+> Currently only for PixiJs - inspired by DearImGui and CSS.
 
 > [!CAUTION]
-> Heavy work in progress, not recommended for production yet.
+> Heavy work in progress, not recommended for production yet!
 
+<br />
 
 ## Install
 
 ```
 npm install @tinytales/_underline
 ```
+<br />
 
 ## Example
 
@@ -44,6 +46,8 @@ _.End()
 ```
 
 Soon i will add more examples into the **_/example_** folder.
+
+<br />
 
 ## Roadmap
 
