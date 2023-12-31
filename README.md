@@ -16,6 +16,13 @@
 ```
 npm install @tinytales/_underline
 ```
+
+<br />
+
+## The thing with the underscore variable
+
+TBA
+
 <br />
 
 ## Example
@@ -26,20 +33,20 @@ _.Display(TinyGui.DisplayFlag.FlexRow)
 
 __.Begin() // main -> left-area
 __.Display(TinyGui.DisplayFlag.FlexFixed)
-__.Rect(25, '100%')
-__.Fill('#ddd')
+__.Rect(25, "100%")
+__.Fill("#ddd")
 __.End()
 
 __.Begin() // main -> fill center content
 __.Display(TinyGui.DisplayFlag.FlexDynamic)
-__.Rect('100%', '100%')
-__.Fill('#fff000')
+__.Rect("100%", "100%")
+__.Fill("#fff000")
 __.End()
 
 __.Begin() // main -> right-area
 __.Display(TinyGui.DisplayFlag.FlexFixed)
-__.Rect(25, '100%')
-__.Fill('#ddd')
+__.Rect(25, "100%")
+__.Fill("#ddd")
 __.End()
 
 _.End()
