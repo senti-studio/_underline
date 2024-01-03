@@ -1,4 +1,11 @@
-import { Container, Graphics, Transform } from "pixi.js"
+import { Container, Graphics } from "pixi.js"
+import {
+  TinyBorder,
+  TinyPosition,
+  TinyRect,
+  TransformExpression,
+} from "./types"
+import { evaluate } from "./expressions"
 
 export enum DisplayFlag {
   Inherit = 0,
@@ -9,20 +16,15 @@ export enum DisplayFlag {
   FlexDynamic = 3 << 1,
 }
 
-enum TransformType {
-  Width,
-  Height,
-  X,
-  Y,
+export type DrawReference = {
+  container: Container
+  width: number
+  height: number
+  x: number
+  y: number
 }
 
-type TransformExpression = number | string
-type TinyDisplay = Container
-type TinyRect = { w: TransformExpression; h: TransformExpression }
-type TinyBorder = { width: number; color: string }
-type TinyPosition = { x: TransformExpression; y: TransformExpression }
-
-class TinyStack {
+export class Stack {
   public readonly container: Graphics = new Graphics()
   public display: DisplayFlag = DisplayFlag.Inherit
   public rect: TinyRect | null = null
@@ -30,105 +32,175 @@ class TinyStack {
   public position: TinyPosition = { x: 0, y: 0 }
   public fill: string | null = null
 
-  private _children: Array<TinyStack> = []
-  get children(): Array<TinyStack> {
+  constructor(
+    public readonly name: string,
+    public readonly parent?: Stack
+  ) {
+    this.container.name = name
+  }
+
+  private _children: Array<Stack> = []
+  get children(): Array<Stack> {
     return this._children
   }
 
-  public add(child: TinyStack): number {
-    return this._children.push(child) - 1
+  public add(child: Stack): void {
+    this._children.push(child)
   }
 }
-let _stack: TinyStack
-let _currentStack: TinyStack | null = null
-let _parent: TinyDisplay
 
-export const begin = (parent?: TinyDisplay): void => {
-  // Assign parent if first call
-  if (_parent === undefined && parent === null) {
-    throw new Error("First TinyGui call needs a parent to draw to")
-  }
-  if (_parent !== undefined && parent !== null) {
-    throw new Error("Parent already set. Did you forget to end() a draw?")
-  }
-  if (_parent === undefined) _parent = parent as TinyDisplay
-  // Create base stack
-  if (_stack === undefined) {
-    _stack = new TinyStack()
-    _currentStack = _stack
-    return
-  }
-  // Creeate child stack
-  const child = new TinyStack()
-  _currentStack = child
-  _stack.add(child)
+let _stack: Stack
+let _currentStack: Stack | null = null
+
+export interface _underline {
+  /**
+   * Renders all objects to the given reference.
+   * @param reference - Reference on which to draw to
+   */
+  renderTo(reference: DrawReference): void
+  /**
+   * Ends the current draw operation and adds all graphical objects to the parent.
+   */
+  end(): void
+  /**
+   * Creates a new graphical objects.
+   * @param name - Either use #name for a unique name, or .name for repetables
+   */
+  begin(name: string): void
+  /**
+   * Gives the shape a dimensions, if not used, the shape of the parent is taken.
+   * @param w - Width of the shape, can also be an expression like '100%'
+   * @param h - Height of the shape, can also be an expression like '100%'
+   */
+  dimension(w: number | string, h: number | string): void
+  /**
+   * Fills the shape with the given color, if not used, the shape is transparent.
+   * @param color - Fill color for the shape
+   */
+  fill(color: string): void
+  /**
+   * Default display is Inherit.
+   * @param type - Display type of the shape, for example Flex, Absolute, ...
+   */
+  display(type: DisplayFlag): void
+  /**
+   * Adds a border to the shape.
+   * @param width - Border width
+   * @param color - Border color
+   */
+  border(width: number, color: string): void
+  /**
+   * Adds a position to the shape, if not used, the position of the parent is used.
+   * @param x - Position x
+   * @param y - Position y
+   */
+  position(x: number | string, y: number | string): void
 }
 
-export const end = (): void => {
-  // End current stack (if its not the main)
-  if (_currentStack !== null && _stack.children !== undefined) {
-    _currentStack = null
-    return
+export const _u: _underline = <_underline>{}
+
+_u.renderTo = (reference: DrawReference): void => {
+  const currentStack = ensureOpenStack()
+  if (currentStack.parent != null) {
+    throw new Error(
+      "Stack still has children, did you forget to call end() somewhere?"
+    )
   }
   // End main stack and draw to parent
-  _draw()
+  draw(reference)
   // Clear stack
-  _stack = <TinyStack>{}
-  _currentStack = _stack
+  _stack = <Stack>{}
+  _currentStack = null
 }
 
-export const rect = (w: number | string, h: number | string): void => {
-  const currentStack = _ensureOpenStack()
+_u.end = (): void => {
+  const currentStack = ensureOpenStack()
+  // End current stack (if its not the main)
+  if (currentStack.parent != null) {
+    _currentStack = currentStack.parent
+    return
+  }
+}
+
+_u.begin = (name: string): void => {
+  // Create base stack
+  let s: Stack
+  if (_stack == null) {
+    // Create main stack
+    _stack = new Stack(name)
+    _currentStack = _stack
+  } else {
+    // Creeate child stack
+    s = new Stack(name, _currentStack as Stack)
+    _currentStack!.add(s)
+    _currentStack = s
+  }
+}
+
+_u.dimension = (w: number | string, h: number | string): void => {
+  const currentStack = ensureOpenStack()
   currentStack.rect = { w: w, h: h }
 }
 
-export const fill = (color: string): void => {
-  const currentStack = _ensureOpenStack()
+_u.fill = (color: string): void => {
+  const currentStack = ensureOpenStack()
   currentStack.fill = color
 }
 
-export const display = (type: DisplayFlag): void => {
-  const currentStack = _ensureOpenStack()
+_u.display = (type: DisplayFlag): void => {
+  const currentStack = ensureOpenStack()
   currentStack.display = type
 }
 
-export const border = (width: number, color: string): void => {
-  const currentStack = _ensureOpenStack()
+_u.border = (width: number, color: string): void => {
+  const currentStack = ensureOpenStack()
   currentStack.border = { width: width, color: color }
 }
 
-export const position = (x: number | string, y: number | string): void => {
-  const currentStack = _ensureOpenStack()
+_u.position = (x: number | string, y: number | string): void => {
+  const currentStack = ensureOpenStack()
   currentStack.position = { x: x, y: y }
 }
 
-const _ensureOpenStack = (): TinyStack => {
-  if (_currentStack === null) {
-    throw new Error("No current stack. Did you forget to begin() ?")
+const ensureOpenStack = (): Stack => {
+  if (_currentStack == null) {
+    throw new Error("No open stack. Did you forget to begin() ?")
   }
   return _currentStack
 }
 
-const _draw = (): void => {
-  const currentStack = _ensureOpenStack()
-
+const draw = (parent: DrawReference): void => {
+  const currentStack = ensureOpenStack()
+  console.log("drawing stack", currentStack)
+  console.log("it has children:", currentStack.children.length)
   if (
     _stack.display === DisplayFlag.FlexRow ||
     _stack.display === DisplayFlag.FlexCol
   ) {
-    _drawFlex(currentStack)
+    drawFlex(currentStack, parent)
     return
   }
-  _drawNormal(currentStack)
+
+  const p = drawNormal(currentStack, parent)
+  drawStacks(currentStack.children, p)
+
+  parent.container.addChild(p.container)
 }
 
-const _drawFlex = (stack: TinyStack) => {
+const drawStacks = (stacks: Array<Stack>, parent: DrawReference): void => {
+  stacks.forEach((stack: Stack) => {
+    console.log("stack", stack.name, "has children:", stack.children.length)
+    let p = drawNormal(stack, parent)
+    if (stack.children.length > 0) drawStacks(stack.children, p)
+  })
+}
+
+const drawFlex = (stack: Stack, parent: DrawReference) => {
   if (stack.rect === null) {
     throw new Error(`No rect provided for flex parent ${stack}`)
   }
-  _drawNormal(stack)
+  const parentRef = drawNormal(stack, parent)
 
-  const maxChilds = stack.children.length
   const maxSpace =
     stack.display === DisplayFlag.FlexRow
       ? (stack.rect!.w as number)
@@ -136,7 +208,7 @@ const _drawFlex = (stack: TinyStack) => {
 
   let fixedSpace = 0
   let dynamicCount = 0
-  stack.children.forEach((c: TinyStack) => {
+  stack.children.forEach((c: Stack) => {
     if (c.display === DisplayFlag.FlexFixed) {
       if (c.rect === null) {
         throw new Error(`No rect provided for fixed flex child ${c}`)
@@ -152,106 +224,55 @@ const _drawFlex = (stack: TinyStack) => {
   const dynamicMaxSpace = maxSpace - fixedSpace
   const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
 
-  stack.children.forEach((c: TinyStack) => {
+  stack.children.forEach((c: Stack) => {
     if (c.display === DisplayFlag.FlexDynamic) {
       stack.display === DisplayFlag.FlexRow
         ? (c.rect!.w = dynamicSpacePerChild)
         : (c.rect!.h = dynamicSpacePerChild)
     }
 
-    _drawNormal(c, stack.container)
+    drawNormal(c, parentRef)
   })
 }
 
-const _drawNormal = (
-  currentStack: TinyStack,
-  parent: TinyDisplay = _parent
-) => {
+const drawNormal = (
+  currentStack: Stack,
+  parent: DrawReference
+): DrawReference => {
   const c = currentStack.container
   // Apply properties to container
+  // Begin fill
   currentStack.fill !== null
     ? c.beginFill(currentStack.fill as string)
     : c.beginFill()
+  // Draw border
   if (currentStack.border !== null) {
     c.lineStyle(
       currentStack.border!.width,
       currentStack.border!.color ?? "#000"
     )
   }
-  let x = 0
-  let y = 0
-  if (currentStack.position !== undefined) {
-    x =
-      typeof currentStack.position.x === "number"
-        ? currentStack.position.x
-        : _evaluateExpression(
-            currentStack.position.x,
-            TransformType.X,
-            _parent,
-            c
-          )
-    y =
-      typeof currentStack.position.y === "number"
-        ? currentStack.position.y
-        : _evaluateExpression(
-            currentStack.position.y,
-            TransformType.Y,
-            _parent,
-            c
-          )
-  }
-  let w = 0
-  let h = 0
+  // Evaluate expressions
+  let tw: TransformExpression
+  let th: TransformExpression
   if (currentStack.rect !== null) {
-    w =
-      typeof currentStack.rect!.w === "number"
-        ? currentStack.rect!.w
-        : _evaluateExpression(
-            currentStack.rect.w,
-            TransformType.Width,
-            _parent,
-            c
-          )
-
-    h =
-      typeof currentStack.rect!.h === "number"
-        ? currentStack.rect!.h
-        : _evaluateExpression(
-            currentStack.rect.h,
-            TransformType.Height,
-            _parent,
-            c
-          )
-
-    c.drawRect(x, y, w, h)
+    tw = currentStack.rect.w
+    th = currentStack.rect.h
+  } else {
+    tw = parent.width
+    th = parent.height
   }
+  let tx: TransformExpression = 0
+  let ty: TransformExpression = 0
+  if (currentStack.position !== undefined) {
+    tx = currentStack.position.x
+    ty = currentStack.position.y
+  }
+  const r = evaluate(tx, ty, tw, th, currentStack, parent)
+
+  c.drawRect(r.x, r.y, r.width, r.height)
+
   // Add container to parent
-  parent.addChild(currentStack.container)
-}
-
-const _evaluateExpression = (
-  exp: TransformExpression,
-  type: TransformType,
-  parent: TinyDisplay,
-  ref: TinyDisplay
-): number => {
-  let baseValue = 0
-  let refValue = 0
-  switch (type) {
-    case TransformType.Width:
-    case TransformType.X:
-      baseValue = Math.round(parent.width)
-      refValue = Math.round(ref.width)
-      break
-    case TransformType.Height:
-    case TransformType.Y:
-      baseValue = Math.round(parent.height)
-      refValue = Math.round(ref.height)
-  }
-
-  if (exp === "100%") return baseValue
-  if (exp === "50%") return baseValue / 2
-  if (exp === "center") return baseValue / 2 - refValue / 2
-
-  return 0
+  parent.container.addChild(c)
+  return { container: c, width: r.width, height: r.height, x: r.x, y: r.y }
 }

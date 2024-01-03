@@ -19,32 +19,26 @@ npm install @tinytales/_underline
 
 <br />
 
-## The thing with the underscore variable
-
-TBA
-
-<br />
-
 ## Example
 
 ```typescript
-_.Begin(this) // main
-_.Display(TinyGui.DisplayFlag.FlexRow)
+_.Begin("#main", this) // main
+_.Display(DisplayFlag.FlexRow)
 
-__.Begin() // main -> left-area
-__.Display(TinyGui.DisplayFlag.FlexFixed)
+__.Begin("#left-area") // main -> left-area
+__.Display(DisplayFlag.FlexFixed)
 __.Rect(25, "100%")
 __.Fill("#ddd")
 __.End()
 
-__.Begin() // main -> fill center content
-__.Display(TinyGui.DisplayFlag.FlexDynamic)
+__.Begin("#content") // main -> fill center content
+__.Display(DisplayFlag.FlexDynamic)
 __.Rect("100%", "100%")
 __.Fill("#fff000")
 __.End()
 
-__.Begin() // main -> right-area
-__.Display(TinyGui.DisplayFlag.FlexFixed)
+__.Begin("#right-area") // main -> right-area
+__.Display(DisplayFlag.FlexFixed)
 __.Rect(25, "100%")
 __.Fill("#ddd")
 __.End()
@@ -58,10 +52,14 @@ Soon i will add more examples into the **_/example_** folder.
 
 ## Roadmap
 
-- [ ] Key / Mouse Events (v0.3)
-- [ ] Text / Images (v0.4)
-- [ ] Examples & Unittests (v0.5)
-- [ ] More shapes (currently only rect) (v0.5)
-- [ ] More useful CSS options (v0.6)
-- [ ] Tables & Lists (v0.7)
-- [ ] Scrollables (v0.8)
+- [ ] Key / Mouse Events
+- [ ] Text / Images
+- [ ] Examples & Unittests
+- [ ] More shapes (currently only rect)
+- [ ] More useful CSS options
+- [ ] Tables & Lists
+- [ ] Scrollables
+- [ ] Reusables & Repeatables
+- [ ] Hover, Click States
+- [ ] Global Settings (Reusables, Styles, States)
+- [ ] WebGl, Phaser Support
