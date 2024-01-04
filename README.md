@@ -22,28 +22,29 @@ npm install @tinytales/_underline
 ## Example
 
 ```typescript
-_.Begin("#main", this) // main
-_.Display(DisplayFlag.FlexRow)
+_u.begin("#main") // main
+_u.display(DisplayFlag.FlexRow)
 
-__.Begin("#left-area") // main -> left-area
-__.Display(DisplayFlag.FlexFixed)
-__.Rect(25, "100%")
-__.Fill("#ddd")
-__.End()
+_u.begin("#left-area") // main -> left-area
+_u.display(DisplayFlag.FlexFixed)
+_u.rect(25, "100%")
+_u.fill("#ddd")
+_u.end()
 
-__.Begin("#content") // main -> fill center content
-__.Display(DisplayFlag.FlexDynamic)
-__.Rect("100%", "100%")
-__.Fill("#fff000")
-__.End()
+_u.begin("#content") // main -> fill center content
+_u.display(DisplayFlag.FlexDynamic)
+_u.rect("100%", "100%")
+_u.fill("#fff000")
+_u.end()
 
-__.Begin("#right-area") // main -> right-area
-__.Display(DisplayFlag.FlexFixed)
-__.Rect(25, "100%")
-__.Fill("#ddd")
-__.End()
+_u.begin("#right-area") // main -> right-area
+_u.display(DisplayFlag.FlexFixed)
+_u.rect(25, "100%")
+_u.fill("#ddd")
+_u.end()
 
-_.End()
+_u.end()
+_u.renderTo(this)
 ```
 
 Soon i will add more examples into the **_/example_** folder.
@@ -62,4 +63,4 @@ Soon i will add more examples into the **_/example_** folder.
 - [ ] Reusables & Repeatables
 - [ ] Hover, Click States
 - [ ] Global Settings (Reusables, Styles, States)
-- [ ] WebGl, Phaser Support
+- [ ] Canvas, WebGL, Phaser Support
