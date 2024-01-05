@@ -1,5 +1,12 @@
 import { Graphics } from "pixi.js"
-import { DrawReference, Border, Position, _uBase, Dimensions } from "./types"
+import {
+  DrawReference,
+  Border,
+  Position,
+  _uBase,
+  Dimensions,
+  Area,
+} from "./types"
 import { resolve } from "./resolver"
 
 export enum DisplayFlag {
@@ -17,6 +24,7 @@ export class Stack {
   public dimensions: Dimensions | null = null
   public border: Border | null = null
   public position: Position | null = null
+  public padding: Area | null = null
   public fill: string | null = null
   public text: string = ""
   public textStyle: string = ""
@@ -95,6 +103,10 @@ export interface _underline extends _uBase {
   position(x: number | string, y: number | string): void
 
   text(text: string, style?: string): void
+
+  padding(t: number, r: number, b: number, l: number): void
+  padding(tb: number, rl: number): void
+  padding(all: number): void
 }
 
 export const _u: _underline = <_underline>{}
@@ -164,6 +176,30 @@ _u.text = (text: string, style?: string): void => {
   const currentStack = ensureOpenStack()
   currentStack.text = text
   currentStack.textStyle = style ?? ""
+}
+
+_u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
+  const currentStack = ensureOpenStack()
+
+  let padding = <Area>{}
+  if (p3 != null && p4 != null) {
+    padding.t = p1
+    padding.r = p2 as number
+    padding.b = p3 as number
+    padding.l = p3 as number
+  } else if (p2 != null && p3 == null && p4 == null) {
+    padding.t = p1
+    padding.r = p2 as number
+    padding.b = p1
+    padding.l = p2 as number
+  } else {
+    padding.t = p1
+    padding.r = p1
+    padding.b = p1
+    padding.l = p1
+  }
+
+  currentStack.padding = padding
 }
 
 const ensureOpenStack = (): Stack => {

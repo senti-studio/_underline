@@ -17,6 +17,12 @@ export type Dimensions = {
   w: number | ValueExpression
   h: number | ValueExpression
 }
+export type Area = {
+  l: number
+  r: number
+  t: number
+  b: number
+}
 
 export type DrawReference = {
   container: Container

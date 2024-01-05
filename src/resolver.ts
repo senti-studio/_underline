@@ -1,7 +1,7 @@
 import { Text, TextMetrics, TextStyle } from "pixi.js"
 import { DisplayFlag, Stack } from "./_underline"
 import { evaluateDimensions, evaluatePosition } from "./expressions"
-import { Dimensions, DrawReference, Position } from "./types"
+import { Area, Dimensions, DrawReference, Position } from "./types"
 import { _underlineStyle, getStyle } from "./_uStyle"
 import { _uGlobal } from "./_uGlobal"
 
@@ -18,10 +18,19 @@ export const resolve = (stack: Stack, parent: DrawReference): void => {
       dimensions: stack.dimensions!,
       position: stack.position!,
     })
+    // applyPadding(c.position!, stack.padding)
   })
 
   parent.container.addChild(stack.container)
 }
+
+const applyPadding = (stackP: Position, parent: Area | null): void => {
+  if (parent == null) return
+
+  stackP.x = (stackP.x as number) + parent.l
+  stackP.y = (stackP.x as number) + parent.l
+}
+
 const applyTransforms = (stack: Stack, parent: DrawReference): void => {
   // Apply properties to container
   const c = stack.container
@@ -37,8 +46,7 @@ const applyTransforms = (stack: Stack, parent: DrawReference): void => {
     const t = drawText(stack)
     c.addChild(t!.container)
     // Address dimensions
-    if (stack.display === DisplayFlag.Absolute && stack.dimensions == null) {
-      stack.dimensions = t!.dimensions
+    if (stack.display === DisplayFlag.Absolute) {
       // After we have dimensions, we need to reevaluate
       // the position expressions (in case there are some)
       resolvePositions(stack, parent.position, parent.dimensions)
@@ -72,34 +80,18 @@ const drawText = (stack: Stack): DrawReference => {
   t.name = stack.name + "_text"
   // Get text dimensions
   const tm = TextMetrics.measureText(stack.text, style)
-  const tp = resolveTextPosition(stack, t)
-
-  stack.container.addChild(t)
-
-  return {
-    container: t,
-    position: tp,
-    dimensions: { w: tm.width, h: tm.height },
-  }
-}
-
-const resolveTextPosition = (stack: Stack, t: Text): Position => {
-  // Get given style or default fallback
-  const uStyle = getStyle(stack.textStyle)
-  // Create pixi text style
-  const style = new TextStyle({
-    fontFamily: uStyle?.font,
-    fontSize: uStyle?.size,
-    fill: uStyle?.color,
-  })
-  // Get text dimensions
-  const tm = TextMetrics.measureText(stack.text, style)
   let stackD = stack.dimensions
-  console.log("stack d is", stackD)
   // If the stack doesnt have dimensions, it scales of of the text dimensions
   // in which case we can just pass them on
-  if (stackD == null) stackD = { w: tm.width, h: tm.height }
-  // Evaluate style expressions
+  if (stackD == null) {
+    stackD = { w: tm.width, h: tm.height }
+    // If it has padding, we need to add it here
+    if (stack.padding != null) {
+      stackD.w = (stackD.w as number) + stack.padding.l + stack.padding.r
+    }
+  }
+  stack.dimensions = stackD
+
   const tp = evaluatePosition(
     { x: uStyle.position.x, y: uStyle.position.y },
     { w: tm.width, h: tm.height },
@@ -107,8 +99,16 @@ const resolveTextPosition = (stack: Stack, t: Text): Position => {
   )
   t.x = tp.x as number
   t.y = tp.y as number
+  console.log("t before", t.x)
+  // applyPadding({ x: t.x, y: t.y }, stack.padding)
+  console.log("t after", t.x)
+  stack.container.addChild(t)
 
-  return tp
+  return {
+    container: t,
+    position: tp,
+    dimensions: { w: tm.width, h: tm.height },
+  }
 }
 
 const resolveDimensions = (stack: Stack, parent: Dimensions): void => {
