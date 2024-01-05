@@ -1,0 +1,22 @@
+{
+  "menu": [
+    {
+      "framework": "pixijs",
+      "menuItems": [
+        {
+          "label": "Getting Started",
+          "children": [
+            {
+              "label": "Overview",
+              "to": "pixijs/overview"
+            },
+            {
+              "label": "Installation",
+              "to": "pixijs/installation"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
