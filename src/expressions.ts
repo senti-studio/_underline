@@ -1,81 +1,66 @@
-import { DisplayFlag, Stack, DrawReference } from "./_underline"
-import { TransformExpression, TransformType } from "./types"
+import { Dimensions, Position, TransformType, ValueExpression } from "./types"
 
-export const evaluate = (
-  tx: TransformExpression,
-  ty: TransformExpression,
-  tw: TransformExpression,
-  th: TransformExpression,
-  stack: Stack,
-  p: DrawReference
-): DrawReference => {
-  // Evaluate dimensions first (mandatory for later steps)
-  // Current stack dimensions not needed for w and h
-  const emptyReference = {
-    container: stack.container,
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
+export const evaluateDimensions = (
+  ref: Dimensions,
+  parent: Dimensions
+): Dimensions => {
+  if (typeof parent.w !== "number" || typeof parent.h !== "number") {
+    throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
   }
-  let w = expToNumber(tw, TransformType.Width, emptyReference, p)
-  let h = expToNumber(th, TransformType.Height, emptyReference, p)
-  // Posision
-  const updatedReference = emptyReference
-  updatedReference.width = w
-  updatedReference.height = h
-  let x = expToNumber(tx, TransformType.X, updatedReference, p)
-  let y = expToNumber(ty, TransformType.Y, updatedReference, p)
-  // If not absolute, move object relative to its parent
-  if (stack.display === DisplayFlag.Inherit) {
-    x += p.x
-    y += p.y
-  }
-  // If the dimensions are an expression like 100%, we need to consider
-  // off position of x and y and subtract it from the final dimensions
-  if (typeof tw !== "number") w -= x
-  if (typeof th !== "number") h -= y + 5
 
-  return {
-    container: stack.container,
-    width: w,
-    height: h,
-    x: x,
-    y: y,
+  const w = expToNumber(ref.w, parent.w as number, TransformType.Width)
+  const h = expToNumber(ref.h, parent.h as number, TransformType.Height)
+  return { w, h }
+}
+
+export const evaluatePosition = (
+  refP: Position,
+  refD: Dimensions,
+  parent: Dimensions
+): Position => {
+  if (typeof parent.w !== "number" || typeof parent.h !== "number") {
+    throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
   }
+  if (typeof refD.w !== "number" || typeof refD.h !== "number") {
+    throw new Error(`Current stack has unresolved/invalid dimensions: ${refD}`)
+  }
+  let x = expToNumber(refP.x, parent.w, TransformType.X, refD.w as number)
+  let y = expToNumber(refP.y, parent.h, TransformType.Y, refD.h as number)
+
+  return { x: x, y: y }
 }
 
 const expToNumber = (
-  exp: TransformExpression,
+  exp: number | ValueExpression,
+  p: number,
   type: TransformType,
-  sd: DrawReference,
-  p: DrawReference
+  s?: number
 ): number => {
   if (typeof exp === "number") return exp
-
-  return evaluateExpression(exp, type, p, sd)
+  return evaluateExpression(exp, p, type, s)
 }
 
 const evaluateExpression = (
-  exp: TransformExpression,
+  exp: ValueExpression,
+  p: number,
   type: TransformType,
-  parent: DrawReference,
-  ref: DrawReference
+  refDimension?: number
 ) => {
   let baseValue = 0
   let refValue = 0
   switch (type) {
     case TransformType.Width:
     case TransformType.X:
-      baseValue = Math.round(parent.width)
-      // Only needed for x
-      refValue = Math.round(ref.width)
+      baseValue = Math.round(p)
+      // Only needed for x (not present in dimensional evals)
+      refValue = refDimension ? Math.round(refDimension) : 0
       break
     case TransformType.Height:
     case TransformType.Y:
-      baseValue = Math.round(parent.height)
-      // Only needed for y
-      refValue = Math.round(ref.height)
+      baseValue = Math.round(p)
+      // Only needed for y (not present in dimensional evals)
+      refValue = refDimension ? Math.round(refDimension) : 0
+      break
   }
 
   if (exp === "100%") return baseValue
