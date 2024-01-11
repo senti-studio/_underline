@@ -1,27 +1,84 @@
-import { Text, TextMetrics, TextStyle } from "pixi.js"
 import { DisplayFlag, Stack } from "./_underline"
 import { evaluateDimensions, evaluatePosition } from "./expressions"
 import { Area, Dimensions, DrawReference, Position } from "./types"
 import { _underlineStyle, getStyle } from "./_uStyle"
 import { _uGlobal } from "./_uGlobal"
+import { Text, TextMetrics, TextStyle } from "pixi.js"
 
+//TODO: We need to check for flex on a lower level too, every stack could be a flex
 export const resolve = (stack: Stack, parent: DrawReference): void => {
+  if (
+    stack.display === DisplayFlag.FlexCol ||
+    stack.display === DisplayFlag.FlexRow
+  ) {
+    // Flex display needs special treatment
+    resolveFlex(stack, parent)
+    return
+  }
+  resolveFullStack(stack, parent)
+}
+
+const resolveStack = (stack: Stack, parent: DrawReference): void => {
   // Resolve expressions
   resolveDimensions(stack, parent.dimensions)
   resolvePositions(stack, parent.position, parent.dimensions)
   // Apply transforms to container
   applyTransforms(stack, parent)
   // Resolve all children
+}
+const resolveFullStack = (stack: Stack, parent: DrawReference): void => {
+  // Resolve main stack first
+  resolveStack(stack, parent)
+  // Then all children recursively
   stack.children.forEach((c: Stack) => {
-    resolve(c, {
+    resolveFullStack(c, {
       container: stack.container,
       dimensions: stack.dimensions!,
       position: stack.position!,
     })
     // applyPadding(c.position!, stack.padding)
   })
-
+  // Add each child to its parent
   parent.container.addChild(stack.container)
+}
+
+const resolveFlex = (stack: Stack, parent: DrawReference): void => {
+  if (stack.dimensions === null) {
+    throw new Error(`No dimensions provided for flex parent ${stack}`)
+  }
+  const parentRef = resolveStack(stack, parent)
+
+  const maxSpace =
+    stack.display === DisplayFlag.FlexRow
+      ? (stack.dimensions!.w as number) // Left to right display
+      : (stack.dimensions!.h as number) // Top to bottom display
+
+  let fixedSpace = 0
+  let dynamicCount = 0
+  stack.children.forEach((c: Stack) => {
+    if (c.display === DisplayFlag.FlexFixed) {
+      if (c.dimensions === null) {
+        throw new Error(`No dimensions provided for fixed flex child ${c}`)
+      }
+      fixedSpace += c.dimensions!.w as number // fixed container cant have expression
+    } else if (c.display === DisplayFlag.FlexDynamic) {
+      ++dynamicCount
+    } else {
+      throw new Error(`No flex display option provided for ${c}`)
+    }
+  })
+
+  const dynamicMaxSpace = maxSpace - fixedSpace
+  const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
+
+  stack.children.forEach((c: Stack) => {
+    if (c.display === DisplayFlag.FlexDynamic) {
+      stack.display === DisplayFlag.FlexRow
+        ? (c.dimensions!.w = dynamicSpacePerChild)
+        : (c.dimensions!.h = dynamicSpacePerChild)
+    }
+  })
+  resolveFullStack(stack, parent)
 }
 
 const applyPadding = (stackP: Position, parent: Area | null): void => {
@@ -35,9 +92,9 @@ const applyTransforms = (stack: Stack, parent: DrawReference): void => {
   // Apply properties to container
   const c = stack.container
   // Begin fill
-  stack.fill !== null ? c.beginFill(stack.fill as string) : c.beginFill()
+  if (stack.fill != null) c.beginFill(stack.fill as string)
   // Draw border
-  if (stack.border !== null) {
+  if (stack.border != null) {
     c.lineStyle(stack.border!.width, stack.border!.color ?? "#000")
   }
 
@@ -185,7 +242,7 @@ const resolvePositions = (
         parentD
       )
       stack.position.x = (stack.position.x as number) + (parentP.x as number)
-      stack.position.y = (stack.position.y as number) + (parentP.x as number)
+      stack.position.y = (stack.position.y as number) + (parentP.y as number)
       break
     default:
       throw new Error(
@@ -193,60 +250,3 @@ const resolvePositions = (
       )
   }
 }
-
-/*export const draw = (parent: DrawReference, currentStack: Stack): void => {
-  if (
-    currentStack.display === DisplayFlag.FlexRow ||
-    currentStack.display === DisplayFlag.FlexCol
-  ) {
-    drawFlex(currentStack, parent)
-    return
-  }
-
-  const p = drawNormal(currentStack, parent)
-  drawStacks(currentStack.children, p)
-
-  parent.container.addChild(p.container)
-}*/
-
-/*
-const drawFlex = (stack: Stack, parent: DrawReference) => {
-  if (stack.dimensions === null) {
-    throw new Error(`No rect provided for flex parent ${stack}`)
-  }
-  const parentRef = drawNormal(stack, parent)
-
-  const maxSpace =
-    stack.display === DisplayFlag.FlexRow
-      ? (stack.dimensions!.w as number)
-      : (stack.dimensions!.h as number)
-
-  let fixedSpace = 0
-  let dynamicCount = 0
-  stack.children.forEach((c: Stack) => {
-    if (c.display === DisplayFlag.FlexFixed) {
-      if (c.dimensions === null) {
-        throw new Error(`No rect provided for fixed flex child ${c}`)
-      }
-      fixedSpace += c.dimensions!.w as number // fixed container cant have expression
-    } else if (c.display === DisplayFlag.FlexDynamic) {
-      ++dynamicCount
-    } else {
-      throw new Error(`No flex display option provided for ${c}`)
-    }
-  })
-
-  const dynamicMaxSpace = maxSpace - fixedSpace
-  const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
-
-  stack.children.forEach((c: Stack) => {
-    if (c.display === DisplayFlag.FlexDynamic) {
-      stack.display === DisplayFlag.FlexRow
-        ? (c.dimensions!.w = dynamicSpacePerChild)
-        : (c.dimensions!.h = dynamicSpacePerChild)
-    }
-
-    drawNormal(c, parentRef)
-  })
-}
-*/
