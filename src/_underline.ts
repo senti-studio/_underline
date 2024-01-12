@@ -1,4 +1,4 @@
-import { Graphics } from "pixi.js"
+import * as PIXI from "pixi.js"
 import {
   DrawReference,
   Border,
@@ -19,7 +19,7 @@ export enum DisplayFlag {
 }
 
 export class Stack {
-  public readonly container: Graphics = new Graphics()
+  public readonly container: PIXI.Graphics = new PIXI.Graphics()
   public display: DisplayFlag = DisplayFlag.Inherit
   public dimensions: Dimensions | null = null
   public border: Border | null = null
@@ -63,8 +63,20 @@ export class Stack {
     }
     return false
   }
+
+  public reference(): DrawReference {
+    if (this.position == null) this.position = { x: 0, y: 0 }
+    if (this.dimensions == null) this.dimensions = { w: 0, h: 0 }
+
+    return {
+      container: this.container,
+      position: this.position,
+      dimensions: this.dimensions,
+    } satisfies DrawReference
+  }
 }
 
+const _stacks: Array<Stack> = []
 let _currentStack: Stack | null = null
 
 export interface _underline extends _uBase {
@@ -119,7 +131,8 @@ _u.renderTo = (reference: DrawReference): void => {
     )
   }
   // End main stack and draw to parent
-  resolve(currentStack, reference)
+  const resolvedStack = resolve(currentStack, reference)
+  _stacks.push(resolvedStack)
   // Clear stack
   _currentStack = null
 }

@@ -5,19 +5,49 @@ import { _underlineStyle, getStyle } from "./_uStyle"
 import { _uGlobal } from "./_uGlobal"
 import { Text, TextMetrics, TextStyle } from "pixi.js"
 
+type StackReference = {
+  name: string
+  ref: DrawReference
+  children: Array<StackReference>
+}
+
 //TODO: We need to check for flex on a lower level too, every stack could be a flex
-export const resolve = (stack: Stack, parent: DrawReference): void => {
+export const resolve = (stack: Stack, parent: DrawReference): Stack => {
   if (
     stack.display === DisplayFlag.FlexCol ||
     stack.display === DisplayFlag.FlexRow
   ) {
     // Flex display needs special treatment
     resolveFlex(stack, parent)
-    return
+    return stack
   }
   resolveFullStack(stack, parent)
+
+  return stack
 }
 
+const resolveFullStack = (
+  stack: Stack,
+  parent: DrawReference
+): StackReference => {
+  const ref = <StackReference>{}
+  // Resolve main stack first
+  const stackRef = resolveStack(stack, parent)
+  ref.name = stack.name
+  ref.ref = stackRef
+  // Then all children recursively
+  stack.children.forEach((c: Stack) => {
+    const childRef = resolveFullStack(c, {
+      container: stack.container,
+      dimensions: stack.dimensions!,
+      position: stack.position!,
+    })
+    ref.children.push(childRef)
+    //TODO: applyPadding(c.position!, stack.padding)
+  })
+
+  return ref
+}
 const resolveStack = (stack: Stack, parent: DrawReference): void => {
   // Resolve expressions
   resolveDimensions(stack, parent.dimensions)
@@ -26,20 +56,89 @@ const resolveStack = (stack: Stack, parent: DrawReference): void => {
   applyTransforms(stack, parent)
   // Resolve all children
 }
-const resolveFullStack = (stack: Stack, parent: DrawReference): void => {
-  // Resolve main stack first
-  resolveStack(stack, parent)
-  // Then all children recursively
-  stack.children.forEach((c: Stack) => {
-    resolveFullStack(c, {
-      container: stack.container,
-      dimensions: stack.dimensions!,
-      position: stack.position!,
-    })
-    // applyPadding(c.position!, stack.padding)
-  })
-  // Add each child to its parent
-  parent.container.addChild(stack.container)
+
+const resolveDimensions = (stack: Stack, parent: Dimensions): void => {
+  switch (true) {
+    // Display absolute requires dimensions
+    case stack.display === DisplayFlag.Absolute && stack.dimensions == null:
+      if (stack.text != null) return //With text, we use the text dimensions
+      // Otherwise print a warning that no dimensions are set
+      console.warn(`Current stack is absolute but has no dimensions: ${stack}`)
+      stack.dimensions = { w: 0, h: 0 }
+      return
+    // Inherited display from parent
+    case stack.display === DisplayFlag.Inherit && stack.dimensions == null:
+      stack.dimensions = parent
+      break
+    // Display absolute expression get evaluated based on window dimensions
+    case stack.display === DisplayFlag.Absolute && stack.dimensions != null:
+      if (_uGlobal.resolution == null) {
+        throw new Error(`Game resolution not set (Use _uGlobal.resolution)`)
+      }
+      const wd = <Dimensions>{
+        w: _uGlobal.resolution.w,
+        h: _uGlobal.resolution.h,
+      }
+      stack.dimensions = evaluateDimensions(stack.dimensions!, wd)
+      // Resolve position/paddings to give children correct dimensions
+      // resolvePositionalDifferences(stack)
+      break
+    // Inherited display expressions get avaluated based on parent
+    case stack.display === DisplayFlag.Inherit && stack.dimensions != null:
+      stack.dimensions = evaluateDimensions(stack.dimensions!, parent)
+      // Resolve position/paddings to give children correct dimensions
+      // resolvePositionalDifferences(stack)
+      break
+    default:
+      throw new Error(
+        `Something went terribly wrong with dimensions on: ${stack.name}`
+      )
+  }
+}
+
+const resolvePositions = (
+  stack: Stack,
+  parentP: Position,
+  parentD: Dimensions
+): void => {
+  switch (true) {
+    case stack.display === DisplayFlag.Absolute && stack.position == null:
+      stack.position = { x: 0, y: 0 }
+      return
+    case stack.display === DisplayFlag.Inherit && stack.position == null:
+      stack.position = parentP
+      break
+    case stack.display === DisplayFlag.Absolute && stack.position != null:
+      // Dont evaluate the position if it has expressions and we have text
+      // In that case we will change the dimensions after creating the text
+      // and reevaluating the position
+      if (
+        stack.text != null &&
+        stack.dimensions == null &&
+        stack.hasExpressions(stack.position!)
+      )
+        return
+
+      stack.position = evaluatePosition(
+        stack.position!,
+        stack.dimensions!,
+        _uGlobal.resolution
+      )
+      break
+    case stack.display === DisplayFlag.Inherit && stack.position != null:
+      stack.position = evaluatePosition(
+        stack.position!,
+        stack.dimensions!,
+        parentD
+      )
+      stack.position.x = (stack.position.x as number) + (parentP.x as number)
+      stack.position.y = (stack.position.y as number) + (parentP.y as number)
+      break
+    default:
+      throw new Error(
+        `Something went terribly wrong with dimensions on: ${stack.name}`
+      )
+  }
 }
 
 const resolveFlex = (stack: Stack, parent: DrawReference): void => {
@@ -165,88 +264,5 @@ const drawText = (stack: Stack): DrawReference => {
     container: t,
     position: tp,
     dimensions: { w: tm.width, h: tm.height },
-  }
-}
-
-const resolveDimensions = (stack: Stack, parent: Dimensions): void => {
-  switch (true) {
-    // Display absolute requires dimensions
-    case stack.display === DisplayFlag.Absolute && stack.dimensions == null:
-      if (stack.text != null) return //With text, we use the text dimensions
-      // Otherwise print a warning that no dimensions are set
-      console.warn(`Current stack is absolute but has no dimensions: ${stack}`)
-      stack.dimensions = { w: 0, h: 0 }
-      return
-    // Inherited display from parent
-    case stack.display === DisplayFlag.Inherit && stack.dimensions == null:
-      stack.dimensions = parent
-      break
-    // Display absolute expression get evaluated based on window dimensions
-    case stack.display === DisplayFlag.Absolute && stack.dimensions != null:
-      if (_uGlobal.resolution == null) {
-        throw new Error(`Game resolution not set (Use _uGlobal.resolution)`)
-      }
-      const wd = <Dimensions>{
-        w: _uGlobal.resolution.w,
-        h: _uGlobal.resolution.h,
-      }
-      stack.dimensions = evaluateDimensions(stack.dimensions!, wd)
-      // Resolve position/paddings to give children correct dimensions
-      // resolvePositionalDifferences(stack)
-      break
-    // Inherited display expressions get avaluated based on parent
-    case stack.display === DisplayFlag.Inherit && stack.dimensions != null:
-      stack.dimensions = evaluateDimensions(stack.dimensions!, parent)
-      // Resolve position/paddings to give children correct dimensions
-      // resolvePositionalDifferences(stack)
-      break
-    default:
-      throw new Error(
-        `Something went terribly wrong with dimensions on: ${stack.name}`
-      )
-  }
-}
-const resolvePositions = (
-  stack: Stack,
-  parentP: Position,
-  parentD: Dimensions
-): void => {
-  switch (true) {
-    case stack.display === DisplayFlag.Absolute && stack.position == null:
-      stack.position = { x: 0, y: 0 }
-      return
-    case stack.display === DisplayFlag.Inherit && stack.position == null:
-      stack.position = parentP
-      break
-    case stack.display === DisplayFlag.Absolute && stack.position != null:
-      // Dont evaluate the position if it has expressions and we have text
-      // In that case we will change the dimensions after creating the text
-      // and reevaluating the position
-      if (
-        stack.text != null &&
-        stack.dimensions == null &&
-        stack.hasExpressions(stack.position!)
-      )
-        return
-
-      stack.position = evaluatePosition(
-        stack.position!,
-        stack.dimensions!,
-        _uGlobal.resolution
-      )
-      break
-    case stack.display === DisplayFlag.Inherit && stack.position != null:
-      stack.position = evaluatePosition(
-        stack.position!,
-        stack.dimensions!,
-        parentD
-      )
-      stack.position.x = (stack.position.x as number) + (parentP.x as number)
-      stack.position.y = (stack.position.y as number) + (parentP.y as number)
-      break
-    default:
-      throw new Error(
-        `Something went terribly wrong with dimensions on: ${stack.name}`
-      )
   }
 }
