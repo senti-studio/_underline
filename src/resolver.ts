@@ -1,165 +1,155 @@
-import { DisplayFlag, Stack } from "./_underline"
-import { evaluateDimensions, evaluatePosition } from "./expressions"
-import { Area, Dimensions, DrawReference, Position } from "./types"
-import { _underlineStyle, getStyle } from "./_uStyle"
-import { _uGlobal } from "./_uGlobal"
-import { Text, TextMetrics, TextStyle } from "pixi.js"
+import { evaluateDimensions, evaluatePosition } from './expressions'
+import { Dimensions, DisplayFlag, Position, RenderReference } from './types'
+import { Style, _underlineStyle, getStyle } from './_uStyle'
+import { _uGlobal } from './_uGlobal'
+import { Text, TextMetrics, TextStyle } from 'pixi.js'
+import { Stack, StackReference } from './stacks'
 
-type StackReference = {
-  name: string
-  ref: DrawReference
-  children: Array<StackReference>
-}
+/*
+const resolvePaddings = (stack: StackReference, parent: RenderReference): void => {
+  if (parent.paddings == null) return
+  if (stack.display === DisplayFlag.Absolute) return
 
-//TODO: We need to check for flex on a lower level too, every stack could be a flex
-export const resolve = (stack: Stack, parent: DrawReference): Stack => {
-  if (
-    stack.display === DisplayFlag.FlexCol ||
-    stack.display === DisplayFlag.FlexRow
-  ) {
-    // Flex display needs special treatment
-    resolveFlex(stack, parent)
-    return stack
+  //Left side touches
+  stack.position.x += parent.paddings.l
+  // Right side touches
+  if (stack.dimensions.w >= parent.dimensions.w) {
+    stack.dimensions.w -= parent.paddings.r
   }
-  resolveFullStack(stack, parent)
+  // Top side touches
+  stack.position.y += parent.paddings.t
+  // Bottom side touches
+  if (stack.dimensions.h >= parent.dimensions.h) {
+    // Keep it inside parents boundries
+    stack.dimensions.h = parent.dimensions.h
+    // Subtract the padding
+    stack.dimensions.h -= parent.paddings.b
+  }
+}*/
 
-  return stack
-}
-
-const resolveFullStack = (
-  stack: Stack,
-  parent: DrawReference
-): StackReference => {
-  const ref = <StackReference>{}
-  // Resolve main stack first
-  const stackRef = resolveStack(stack, parent)
-  ref.name = stack.name
-  ref.ref = stackRef
-  // Then all children recursively
-  stack.children.forEach((c: Stack) => {
-    const childRef = resolveFullStack(c, {
-      container: stack.container,
-      dimensions: stack.dimensions!,
-      position: stack.position!,
-    })
-    ref.children.push(childRef)
-    //TODO: applyPadding(c.position!, stack.padding)
-  })
-
-  return ref
-}
-const resolveStack = (stack: Stack, parent: DrawReference): void => {
-  // Resolve expressions
-  resolveDimensions(stack, parent.dimensions)
-  resolvePositions(stack, parent.position, parent.dimensions)
-  // Apply transforms to container
-  applyTransforms(stack, parent)
-  // Resolve all children
-}
-
-const resolveDimensions = (stack: Stack, parent: Dimensions): void => {
+const resolveDimensions = (stack: Stack, parent: Dimensions<number>): Dimensions<number> => {
+  let dRef = <Dimensions<number>>{}
   switch (true) {
-    // Display absolute requires dimensions
+    /**
+     * Display Absolute - No dimensions specified
+     *
+     * Gets 0,0 dimensions as default.
+     */
     case stack.display === DisplayFlag.Absolute && stack.dimensions == null:
-      if (stack.text != null) return //With text, we use the text dimensions
       // Otherwise print a warning that no dimensions are set
       console.warn(`Current stack is absolute but has no dimensions: ${stack}`)
-      stack.dimensions = { w: 0, h: 0 }
-      return
-    // Inherited display from parent
-    case stack.display === DisplayFlag.Inherit && stack.dimensions == null:
-      stack.dimensions = parent
+      dRef = { w: 0, h: 0 }
       break
-    // Display absolute expression get evaluated based on window dimensions
+    /**
+     * Display Inherit - No dimensions specified
+     *
+     * Inherits dimensions from parent
+     */
+    case stack.display === DisplayFlag.Inherit && stack.dimensions == null:
+      dRef = parent
+      break
+    /**
+     * Display Absolute - Dimensions specified
+     *
+     * Expression get evaluated based on window dimensions.
+     */
     case stack.display === DisplayFlag.Absolute && stack.dimensions != null:
       if (_uGlobal.resolution == null) {
         throw new Error(`Game resolution not set (Use _uGlobal.resolution)`)
       }
-      const wd = <Dimensions>{
+      const wd = <Dimensions<number>>{
         w: _uGlobal.resolution.w,
         h: _uGlobal.resolution.h,
       }
-      stack.dimensions = evaluateDimensions(stack.dimensions!, wd)
+      dRef = evaluateDimensions(stack.dimensions!, wd)
       // Resolve position/paddings to give children correct dimensions
       // resolvePositionalDifferences(stack)
       break
-    // Inherited display expressions get avaluated based on parent
+    /**
+     * Display Inherit - Dimensions specified
+     *
+     * Expressions get avaluated based on parent.
+     */
     case stack.display === DisplayFlag.Inherit && stack.dimensions != null:
-      stack.dimensions = evaluateDimensions(stack.dimensions!, parent)
+      dRef = evaluateDimensions(stack.dimensions!, parent)
       // Resolve position/paddings to give children correct dimensions
       // resolvePositionalDifferences(stack)
       break
     default:
-      throw new Error(
-        `Something went terribly wrong with dimensions on: ${stack.name}`
-      )
+      throw new Error(`Something went terribly wrong with dimensions on: ${stack.name}`)
   }
+  return dRef
 }
 
-const resolvePositions = (
-  stack: Stack,
-  parentP: Position,
-  parentD: Dimensions
-): void => {
+const resolvePositions = (stack: Stack, parentP: Position<number>, parentD: Dimensions<number>): Position<number> => {
+  let pRef = <Position<number>>{}
   switch (true) {
+    /**
+     * Display Absolute - No position specified
+     *
+     * Set position to 0,0 as default.
+     */
     case stack.display === DisplayFlag.Absolute && stack.position == null:
-      stack.position = { x: 0, y: 0 }
-      return
-    case stack.display === DisplayFlag.Inherit && stack.position == null:
-      stack.position = parentP
+      pRef = { x: 0, y: 0 }
       break
+    /**
+     * Display Inherit - No position specified
+     *
+     * Use parent position.
+     */
+    case stack.display === DisplayFlag.Inherit && stack.position == null:
+      pRef = parentP
+      break
+    /**
+     * Display Absolute - Position specified
+     */
     case stack.display === DisplayFlag.Absolute && stack.position != null:
       // Dont evaluate the position if it has expressions and we have text
       // In that case we will change the dimensions after creating the text
       // and reevaluating the position
-      if (
-        stack.text != null &&
-        stack.dimensions == null &&
-        stack.hasExpressions(stack.position!)
-      )
-        return
+      if (stack.text != null && stack.dimensions == null && stack.hasExpressions(stack.position!)) {
+        pRef = { x: 0, y: 0 }
+        break
+      }
 
-      stack.position = evaluatePosition(
-        stack.position!,
-        stack.dimensions!,
-        _uGlobal.resolution
-      )
+      pRef = evaluatePosition(stack.position!, stack.dimensions!, _uGlobal.resolution)
       break
+    /**
+     * Display Inherit - Position specified
+     */
     case stack.display === DisplayFlag.Inherit && stack.position != null:
-      stack.position = evaluatePosition(
-        stack.position!,
-        stack.dimensions!,
-        parentD
-      )
-      stack.position.x = (stack.position.x as number) + (parentP.x as number)
-      stack.position.y = (stack.position.y as number) + (parentP.y as number)
+      pRef = evaluatePosition(stack.position!, stack.dimensions!, parentD)
+      // Add parents position to the evaluated stack position
+      pRef.x = (pRef.x as number) + (parentP.x as number)
+      pRef.y = (pRef.y as number) + (parentP.y as number)
       break
     default:
-      throw new Error(
-        `Something went terribly wrong with dimensions on: ${stack.name}`
-      )
+      throw new Error(`Something went terribly wrong with dimensions on: ${stack.name}`)
   }
+
+  return pRef
 }
 
-const resolveFlex = (stack: Stack, parent: DrawReference): void => {
-  if (stack.dimensions === null) {
+/*
+const resolveFlex = (stack: StackReference, parent: RenderReference): StackReference => {
+  if (stack.dimensions == null) {
     throw new Error(`No dimensions provided for flex parent ${stack}`)
   }
-  const parentRef = resolveStack(stack, parent)
 
   const maxSpace =
     stack.display === DisplayFlag.FlexRow
-      ? (stack.dimensions!.w as number) // Left to right display
-      : (stack.dimensions!.h as number) // Top to bottom display
+      ? (stack.dimensions.w as number) // Left to right display
+      : (stack.dimensions.h as number) // Top to bottom display
 
   let fixedSpace = 0
   let dynamicCount = 0
+  // Calculate space
   stack.children.forEach((c: Stack) => {
     if (c.display === DisplayFlag.FlexFixed) {
-      if (c.dimensions === null) {
+      if (c.dimensions == null) {
         throw new Error(`No dimensions provided for fixed flex child ${c}`)
       }
-      fixedSpace += c.dimensions!.w as number // fixed container cant have expression
+      fixedSpace += c.dimensions.w as number // fixed container cant have expressions
     } else if (c.display === DisplayFlag.FlexDynamic) {
       ++dynamicCount
     } else {
@@ -169,100 +159,94 @@ const resolveFlex = (stack: Stack, parent: DrawReference): void => {
 
   const dynamicMaxSpace = maxSpace - fixedSpace
   const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
-
+  // Apply dimensions
   stack.children.forEach((c: Stack) => {
+    const cDraw = <DrawReference>{
+      position: c.position,
+      dimensions: c.dimensions,
+    }
+    //TODO: Recursive call for all children
+    // prettier-ignore
     if (c.display === DisplayFlag.FlexDynamic) {
-      stack.display === DisplayFlag.FlexRow
-        ? (c.dimensions!.w = dynamicSpacePerChild)
-        : (c.dimensions!.h = dynamicSpacePerChild)
+      stack.display === DisplayFlag.FlexRow 
+        ? (cDraw.dimensions.w = dynamicSpacePerChild) 
+        : (cDraw.dimensions.h = dynamicSpacePerChild)
     }
+    const cRef = <StackReference>{ name: c.name, ref: cDraw }
+    ref.children.push(cRef)
   })
-  resolveFullStack(stack, parent)
+
+  return ref
+}*/
+
+type TextReference = {
+  text: Text
+  position: Position<number>
+  dimensions: Dimensions<number>
 }
 
-const applyPadding = (stackP: Position, parent: Area | null): void => {
-  if (parent == null) return
-
-  stackP.x = (stackP.x as number) + parent.l
-  stackP.y = (stackP.x as number) + parent.l
-}
-
-const applyTransforms = (stack: Stack, parent: DrawReference): void => {
-  // Apply properties to container
-  const c = stack.container
-  // Begin fill
-  if (stack.fill != null) c.beginFill(stack.fill as string)
-  // Draw border
-  if (stack.border != null) {
-    c.lineStyle(stack.border!.width, stack.border!.color ?? "#000")
-  }
-
-  // Draw text
-  if (stack.text !== "") {
-    const t = drawText(stack)
-    c.addChild(t!.container)
-    // Address dimensions
-    if (stack.display === DisplayFlag.Absolute) {
-      // After we have dimensions, we need to reevaluate
-      // the position expressions (in case there are some)
-      resolvePositions(stack, parent.position, parent.dimensions)
-      // We also need to reevaluate the text position
-      // now that the dimensions may have changed
-      const ct = stack.container.getChildByName(stack.name + "_text")!
-      ct.x += stack.position!.x as number
-      ct.y += stack.position!.y as number
-    }
-  }
-  // Draw shape
-  c.drawRect(
-    stack.position!.x as number,
-    stack.position!.y as number,
-    stack.dimensions!.w as number,
-    stack.dimensions!.h as number
-  )
-}
-
-const drawText = (stack: Stack): DrawReference => {
-  // Get given style or default fallback
-  const uStyle = getStyle(stack.textStyle)
-  // Create pixi text style
-  const style = new TextStyle({
-    fontFamily: uStyle?.font,
-    fontSize: uStyle?.size,
-    fill: uStyle?.color,
-  })
+export const resolveText = (stack: Stack, stackD: Dimensions<number>, style: TextStyle, uStyle: Style): TextReference => {
   // Create text object
   const t = new Text(stack.text, style)
-  t.name = stack.name + "_text"
+  t.name = stack.name + '_text'
   // Get text dimensions
   const tm = TextMetrics.measureText(stack.text, style)
-  let stackD = stack.dimensions
-  // If the stack doesnt have dimensions, it scales of of the text dimensions
-  // in which case we can just pass them on
-  if (stackD == null) {
-    stackD = { w: tm.width, h: tm.height }
-    // If it has padding, we need to add it here
-    if (stack.padding != null) {
-      stackD.w = (stackD.w as number) + stack.padding.l + stack.padding.r
-    }
-  }
-  stack.dimensions = stackD
 
-  const tp = evaluatePosition(
-    { x: uStyle.position.x, y: uStyle.position.y },
-    { w: tm.width, h: tm.height },
-    stackD
-  )
+  const tp = evaluatePosition({ x: uStyle.position.x, y: uStyle.position.y }, { w: tm.width, h: tm.height }, stackD)
   t.x = tp.x as number
   t.y = tp.y as number
-  console.log("t before", t.x)
+  //TODO: look into padding
   // applyPadding({ x: t.x, y: t.y }, stack.padding)
-  console.log("t after", t.x)
-  stack.container.addChild(t)
 
   return {
-    container: t,
+    text: t,
     position: tp,
     dimensions: { w: tm.width, h: tm.height },
+  } satisfies TextReference
+}
+
+// Create pixi text style
+const resolveTextStyle = (uStyle: Style): TextStyle => {
+  return new TextStyle({
+    fontFamily: uStyle.font,
+    fontSize: uStyle.size,
+    fill: uStyle.color,
+  })
+}
+
+export const resolve = (stack: Stack, parent: RenderReference): StackReference => {
+  // Resolve expressions
+  let d = resolveDimensions(stack, parent.dimensions)
+  const p = resolvePositions(stack, parent.position, parent.dimensions)
+
+  let tRef = null
+  let tStyle = null
+  if (stack.text != null) {
+    // Get given style or default fallback
+    const uStyle = getStyle(stack.textStyle)
+    tStyle = resolveTextStyle(uStyle)
+    tRef = resolveText(stack, d, tStyle, uStyle)
+    // If the stack doesnt have dimensions, it scales of of the text dimensions
+    // in which case we can just pass them on (even if its display absolute)
+    if (stack.dimensions == null) {
+      d = { w: tRef.dimensions.w, h: tRef.dimensions.h }
+    }
   }
+
+  const sRef = {
+    name: stack.name,
+    container: stack.container,
+    display: stack.display,
+    dimensions: d,
+    position: p,
+    fill: stack.fill,
+    border: stack.border,
+    padding: stack.padding,
+    text: tRef ? tRef.text : null,
+    textStyle: tStyle,
+  } satisfies StackReference
+
+  // resolvePaddings(sRef, stack, parent)
+
+  return sRef
 }

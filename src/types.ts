@@ -1,4 +1,4 @@
-import { Container } from "pixi.js"
+import { Container } from 'pixi.js'
 
 export enum TransformType {
   Width,
@@ -7,16 +7,25 @@ export enum TransformType {
   Y,
 }
 
-export type ValueExpression = string
+export enum DisplayFlag {
+  Inherit = 0,
+  Absolute = 1 << 0,
+  FlexRow = 2 << 0,
+  FlexCol = 2 << 1,
+  FlexFixed = 3 << 0,
+  FlexDynamic = 3 << 1,
+}
+
 export type Border = { width: number; color: string }
-export type Position = {
-  x: number | ValueExpression
-  y: number | ValueExpression
+export type Position<T> = {
+  x: T
+  y: T
 }
-export type Dimensions = {
-  w: number | ValueExpression
-  h: number | ValueExpression
+export type Dimensions<T> = {
+  w: T
+  h: T
 }
+
 export type Area = {
   l: number
   r: number
@@ -24,10 +33,11 @@ export type Area = {
   b: number
 }
 
-export type DrawReference = {
+export type RenderReference = {
   container: Container
-  position: Position
-  dimensions: Dimensions
+  position: Position<number>
+  dimensions: Dimensions<number>
+  paddings?: Area
 }
 
 export interface _uBase {

@@ -1,20 +1,20 @@
-import { Position, ValueExpression, _uBase } from "./types"
+import { Position, _uBase } from './types'
 
 type Styles = { [name: string]: Style }
 const _stack: Styles = {}
 let _currentStack: Style | null
 
 export class Style {
-  public font: string = "Arial"
+  public font: string = 'Arial'
   public size: number = 16
-  public color: string = "#000"
-  public position: Position = { x: 0, y: 0 }
+  public color: string = '#000'
+  public position: Position<string | number> = { x: 0, y: 0 }
 
   constructor(public readonly name: string) {}
 }
 
 export const getStyle = (name: string): Style => {
-  return _stack[name] ?? new Style("_default")
+  return _stack[name] ?? new Style('_default')
 }
 
 export interface _underlineStyle extends _uBase {
@@ -29,10 +29,10 @@ export const _uStyle: _underlineStyle = <_underlineStyle>{}
 
 _uStyle.begin = (name: string): void => {
   if (_currentStack != null) {
-    throw new Error("Stack not empty, did you forget to end() ?")
+    throw new Error('Stack not empty, did you forget to end() ?')
   }
   if (_stack[name] != null) {
-    throw new Error("Style already exists")
+    throw new Error('Style already exists')
   }
   _currentStack = new Style(name)
   _stack[name] = _currentStack
@@ -57,18 +57,14 @@ _uStyle.color = (rgb: string): void => {
   currentStack.color = rgb
 }
 
-_uStyle.position = (
-  x: number | ValueExpression,
-  y?: number | ValueExpression
-): void => {
+_uStyle.position = (x: number | string, y?: number | string): void => {
   const currentStack = ensureOpenStack()
-  currentStack.position.x = x
-  currentStack.position.y = y ?? x
+  currentStack.position = <Position<number | string>>{ x: x, y: y ?? x }
 }
 
 const ensureOpenStack = (): Style => {
   if (_currentStack == null) {
-    throw new Error("No open stack. Did you forget to begin() ?")
+    throw new Error('No open stack. Did you forget to begin() ?')
   }
   return _currentStack
 }

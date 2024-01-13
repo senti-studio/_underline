@@ -1,90 +1,13 @@
-import * as PIXI from "pixi.js"
-import {
-  DrawReference,
-  Border,
-  Position,
-  _uBase,
-  Dimensions,
-  Area,
-} from "./types"
-import { resolve } from "./resolver"
-
-export enum DisplayFlag {
-  Inherit = 0,
-  Absolute = 1 << 0,
-  FlexRow = 2 << 0,
-  FlexCol = 2 << 1,
-  FlexFixed = 3 << 0,
-  FlexDynamic = 3 << 1,
-}
-
-export class Stack {
-  public readonly container: PIXI.Graphics = new PIXI.Graphics()
-  public display: DisplayFlag = DisplayFlag.Inherit
-  public dimensions: Dimensions | null = null
-  public border: Border | null = null
-  public position: Position | null = null
-  public padding: Area | null = null
-  public fill: string | null = null
-  public text: string = ""
-  public textStyle: string = ""
-
-  constructor(
-    public readonly name: string,
-    public readonly parent?: Stack
-  ) {
-    this.container.name = name
-  }
-
-  private _children: Array<Stack> = []
-  get children(): Array<Stack> {
-    return this._children
-  }
-
-  public add(child: Stack): void {
-    this._children.push(child)
-  }
-
-  public hasExpressions(transform: Position | Dimensions): boolean {
-    let position: Position | null = null
-    let dimensions: Dimensions | null = null
-    if ((transform as Position).x != null) {
-      position = transform as Position
-    } else {
-      dimensions = transform as Dimensions
-    }
-    // Finx expression
-    if (position != null) {
-      if (typeof position.x === "string") return true
-      if (typeof position.y === "string") return true
-    } else if (dimensions != null) {
-      if (typeof dimensions.w === "string") return true
-      if (typeof dimensions.h === "string") return true
-    }
-    return false
-  }
-
-  public reference(): DrawReference {
-    if (this.position == null) this.position = { x: 0, y: 0 }
-    if (this.dimensions == null) this.dimensions = { w: 0, h: 0 }
-
-    return {
-      container: this.container,
-      position: this.position,
-      dimensions: this.dimensions,
-    } satisfies DrawReference
-  }
-}
-
-const _stacks: Array<Stack> = []
-let _currentStack: Stack | null = null
+import { _uBase, Area, DisplayFlag, RenderReference } from './types'
+import { resolve } from './resolver'
+import { Stack, StackReference, addReference, ensureOpenStack, getCurrentStack, setCurrentStack } from './stacks'
 
 export interface _underline extends _uBase {
   /**
    * Renders all objects to the given reference.
    * @param reference - Reference on which to draw to
    */
-  renderTo(reference: DrawReference): void
+  renderTo(reference: RenderReference): void
   /**
    * Gives the shape a dimensions, if not used, the shape of the parent is taken.
    * @param w - Width of the shape, can also be an expression like '100%'
@@ -123,25 +46,24 @@ export interface _underline extends _uBase {
 
 export const _u: _underline = <_underline>{}
 
-_u.renderTo = (reference: DrawReference): void => {
+_u.renderTo = (reference: RenderReference): void => {
   const currentStack = ensureOpenStack()
   if (currentStack.parent != null) {
-    throw new Error(
-      "Stack still has children, did you forget to call end() somewhere?"
-    )
+    throw new Error('Stack still has children, did you forget to call end() somewhere?')
   }
   // End main stack and draw to parent
   const resolvedStack = resolve(currentStack, reference)
-  _stacks.push(resolvedStack)
+  addReference(resolvedStack)
+  applyTransforms(currentStack, resolvedStack, reference)
   // Clear stack
-  _currentStack = null
+  setCurrentStack(null)
 }
 
 _u.end = (): void => {
   const currentStack = ensureOpenStack()
   // End current stack (if its not the main)
   if (currentStack.parent != null) {
-    _currentStack = currentStack.parent
+    setCurrentStack(currentStack.parent)
     return
   }
 }
@@ -149,14 +71,17 @@ _u.end = (): void => {
 _u.begin = (name: string): void => {
   // Create base stack
   let s: Stack
-  if (_currentStack == null) {
+  if (getCurrentStack() == null) {
     // Create main stack
-    _currentStack = new Stack(name)
+    setCurrentStack(new Stack(name))
   } else {
     // Creeate child stack
-    s = new Stack(name, _currentStack as Stack)
-    _currentStack!.add(s)
-    _currentStack = s
+    const currentStack = getCurrentStack()
+    s = new Stack(name, currentStack!)
+    // Add child to current stack
+    currentStack!.add(s)
+    // Make child the new current stack
+    setCurrentStack(s)
   }
 }
 
@@ -188,7 +113,7 @@ _u.position = (x: number | string, y: number | string): void => {
 _u.text = (text: string, style?: string): void => {
   const currentStack = ensureOpenStack()
   currentStack.text = text
-  currentStack.textStyle = style ?? ""
+  currentStack.textStyle = style ?? ''
 }
 
 _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
@@ -215,9 +140,34 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
   currentStack.padding = padding
 }
 
-const ensureOpenStack = (): Stack => {
-  if (_currentStack == null) {
-    throw new Error("No open stack. Did you forget to begin() ?")
+const applyTransforms = (stack: Stack, sRef: StackReference, parent: RenderReference): void => {
+  // Apply properties to container
+  const c = stack.container
+  // Begin fill
+  if (stack.fill != null) c.beginFill(stack.fill as string)
+  // Draw border
+  if (stack.border != null) {
+    c.lineStyle(stack.border!.width, stack.border!.color ?? '#000')
   }
-  return _currentStack
+
+  // Draw text
+  /*if (stack.text !== '') {
+    const t = resolveText(stack)
+    c.addChild(t!.container)
+    // Address dimensions
+    if (stack.display === DisplayFlag.Absolute) {
+      // After we have dimensions, we need to reevaluate
+      // the position expressions (in case there are some)
+      resolvePosition(stack, parent.position, parent.dimensions)
+      // We also need to reevaluate the text position
+      // now that the dimensions may have changed
+      const ct = stack.container.getChildByName(stack.name + '_text')!
+      ct.x += stack.position!.x as number
+      ct.y += stack.position!.y as number
+    }
+  }*/
+  // Draw shape
+  c.drawRect(sRef.position.x, sRef.position.y, sRef.dimensions.w, sRef.dimensions.h)
+  // Add to parent
+  parent.container.addChild(c)
 }

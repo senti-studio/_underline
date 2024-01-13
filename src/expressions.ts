@@ -1,10 +1,7 @@
-import { Dimensions, Position, TransformType, ValueExpression } from "./types"
+import { Dimensions, Position, TransformType } from './types'
 
-export const evaluateDimensions = (
-  ref: Dimensions,
-  parent: Dimensions
-): Dimensions => {
-  if (typeof parent.w !== "number" || typeof parent.h !== "number") {
+export const evaluateDimensions = (ref: Dimensions<number | string>, parent: Dimensions<number | string>): Dimensions<number> => {
+  if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
   }
 
@@ -13,15 +10,11 @@ export const evaluateDimensions = (
   return { w, h }
 }
 
-export const evaluatePosition = (
-  refP: Position,
-  refD: Dimensions,
-  parent: Dimensions
-): Position => {
-  if (typeof parent.w !== "number" || typeof parent.h !== "number") {
+export const evaluatePosition = (refP: Position<number | string>, refD: Dimensions<number | string>, parent: Dimensions<number | string>): Position<number> => {
+  if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
   }
-  if (typeof refD.w !== "number" || typeof refD.h !== "number") {
+  if (typeof refD.w !== 'number' || typeof refD.h !== 'number') {
     throw new Error(`Current stack has unresolved/invalid dimensions: ${refD}`)
   }
   let x = expToNumber(refP.x, parent.w, TransformType.X, refD.w as number)
@@ -30,22 +23,12 @@ export const evaluatePosition = (
   return { x: x, y: y }
 }
 
-const expToNumber = (
-  exp: number | ValueExpression,
-  p: number,
-  type: TransformType,
-  s?: number
-): number => {
-  if (typeof exp === "number") return exp
+const expToNumber = (exp: number | string, p: number, type: TransformType, s?: number): number => {
+  if (typeof exp === 'number') return exp
   return evaluateExpression(exp, p, type, s)
 }
 
-const evaluateExpression = (
-  exp: ValueExpression,
-  p: number,
-  type: TransformType,
-  refDimension?: number
-) => {
+const evaluateExpression = (exp: string, p: number, type: TransformType, refDimension?: number) => {
   let baseValue = 0
   let refValue = 0
   switch (type) {
@@ -63,9 +46,11 @@ const evaluateExpression = (
       break
   }
 
-  if (exp === "100%") return baseValue
-  if (exp === "50%") return baseValue / 2
-  if (exp === "center") return baseValue / 2 - refValue / 2
+  if (exp === '100%') return baseValue
+  if (exp === '50%') return baseValue / 2
+  if (exp === 'center') return baseValue / 2 - refValue / 2
+  if (exp === 'left') return 0
+  if (exp === 'right') return baseValue - refValue
 
   return 0
 }

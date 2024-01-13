@@ -1,7 +1,7 @@
-import { Dimensions } from "./types"
+import { Dimensions } from './types'
 
 export interface _global {
-  resolution: Dimensions
+  resolution: Dimensions<number>
 }
 
 export const _uGlobal = <_global>{}
