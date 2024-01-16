@@ -1,6 +1,9 @@
 import { Dimensions, Position, TransformType } from './types'
 
-export const evaluateDimensions = (ref: Dimensions<number | string>, parent: Dimensions<number | string>): Dimensions<number> => {
+export const evaluateDimensions = (
+  ref: Dimensions<number | string>,
+  parent: Dimensions<number | string>
+): Dimensions<number> => {
   if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
   }
@@ -9,8 +12,11 @@ export const evaluateDimensions = (ref: Dimensions<number | string>, parent: Dim
   const h = expToNumber(ref.h, parent.h as number, TransformType.Height)
   return { w, h }
 }
-
-export const evaluatePosition = (refP: Position<number | string>, refD: Dimensions<number | string>, parent: Dimensions<number | string>): Position<number> => {
+export const evaluatePosition = (
+  refP: Position<number | string>,
+  refD: Dimensions<number | string>,
+  parent: Dimensions<number | string>
+): Position<number> => {
   if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
   }

@@ -1,10 +1,10 @@
 import * as PIXI from 'pixi.js'
 import { Area, Border, Dimensions, DisplayFlag, Position } from './types'
 
-const _stacks: Array<StackReference> = []
-let _currentStack: Stack | null = null
+const _stack: Map<string, ContainerReference> = new Map()
+let _currentContainer: Container | null = null
 
-export interface StackReference {
+export interface ContainerReference {
   name: string
   container: PIXI.Graphics
   display: DisplayFlag
@@ -17,7 +17,7 @@ export interface StackReference {
   textStyle: PIXI.TextStyle | null
 }
 
-export class Stack {
+export class Container {
   public readonly container: PIXI.Graphics = new PIXI.Graphics()
   public display: DisplayFlag = DisplayFlag.Inherit
   public dimensions: Dimensions<number | string> | null = null
@@ -30,17 +30,17 @@ export class Stack {
 
   constructor(
     public readonly name: string,
-    public readonly parent?: Stack,
+    public readonly parent?: Container
   ) {
     this.container.name = name
   }
 
-  private _children: Array<Stack> = []
-  get children(): Array<Stack> {
+  private _children: Array<Container> = []
+  get children(): Array<Container> {
     return this._children
   }
 
-  public add(child: Stack): void {
+  public add(child: Container): void {
     this._children.push(child)
   }
 
@@ -64,20 +64,20 @@ export class Stack {
   }
 }
 
-export const setCurrentStack = (stack: Stack | null): void => {
-  _currentStack = stack
+export const setCurrent = (stack: Container | null): void => {
+  _currentContainer = stack
 }
-export const getCurrentStack = (): Stack | null => {
-  return _currentStack
+export const getCurrentStack = (): Container | null => {
+  return _currentContainer
 }
 
-export const addReference = (ref: StackReference): void => {
+export const addReference = (ref: ContainerReference): void => {
   _stacks.push(ref)
 }
 
-export const ensureOpenStack = (): Stack => {
-  if (_currentStack == null) {
+export const ensureOpenStack = (): Container => {
+  if (_currentContainer == null) {
     throw new Error('No open stack. Did you forget to begin() ?')
   }
-  return _currentStack
+  return _currentContainer
 }

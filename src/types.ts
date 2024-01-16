@@ -46,8 +46,4 @@ export interface _uBase {
    * @param name - Either use #name for a unique name, or .name for repetables
    */
   begin(name: string): void
-  /**
-   * Ends the current draw operation and adds all graphical objects to the parent.
-   */
-  end(): void
 }

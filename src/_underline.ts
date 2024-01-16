@@ -1,6 +1,6 @@
 import { _uBase, Area, DisplayFlag, RenderReference } from './types'
 import { resolve } from './resolver'
-import { Stack, StackReference, addReference, ensureOpenStack, getCurrentStack, setCurrentStack } from './stacks'
+import { Container, ContainerReference, addReference, ensureOpenStack, getCurrentStack, setCurrent } from './stacks'
 
 export interface _underline extends _uBase {
   /**
@@ -47,77 +47,53 @@ export interface _underline extends _uBase {
 export const _u: _underline = <_underline>{}
 
 _u.renderTo = (reference: RenderReference): void => {
-  const currentStack = ensureOpenStack()
-  if (currentStack.parent != null) {
+  const current = ensureOpenStack()
+  if (current.parent != null) {
     throw new Error('Stack still has children, did you forget to call end() somewhere?')
   }
-  // End main stack and draw to parent
-  const resolvedStack = resolve(currentStack, reference)
+  const resolvedStack = resolve(current, reference)
   addReference(resolvedStack)
-  applyTransforms(currentStack, resolvedStack, reference)
-  // Clear stack
-  setCurrentStack(null)
-}
-
-_u.end = (): void => {
-  const currentStack = ensureOpenStack()
-  // End current stack (if its not the main)
-  if (currentStack.parent != null) {
-    setCurrentStack(currentStack.parent)
-    return
-  }
+  applyTransforms(current, resolvedStack, reference)
+  setCurrent(null)
 }
 
 _u.begin = (name: string): void => {
-  // Create base stack
-  let s: Stack
-  if (getCurrentStack() == null) {
-    // Create main stack
-    setCurrentStack(new Stack(name))
-  } else {
-    // Creeate child stack
-    const currentStack = getCurrentStack()
-    s = new Stack(name, currentStack!)
-    // Add child to current stack
-    currentStack!.add(s)
-    // Make child the new current stack
-    setCurrentStack(s)
-  }
+  setCurrent(new Container(name))
 }
 
 _u.dimension = (w: number | string, h: number | string): void => {
-  const currentStack = ensureOpenStack()
-  currentStack.dimensions = { w: w, h: h }
+  const current = ensureOpenStack()
+  current.dimensions = { w: w, h: h }
 }
 
 _u.fill = (color: string): void => {
-  const currentStack = ensureOpenStack()
-  currentStack.fill = color
+  const current = ensureOpenStack()
+  current.fill = color
 }
 
 _u.display = (type: DisplayFlag): void => {
-  const currentStack = ensureOpenStack()
-  currentStack.display = type
+  const current = ensureOpenStack()
+  current.display = type
 }
 
 _u.border = (width: number, color: string): void => {
-  const currentStack = ensureOpenStack()
-  currentStack.border = { width: width, color: color }
+  const current = ensureOpenStack()
+  current.border = { width: width, color: color }
 }
 
 _u.position = (x: number | string, y: number | string): void => {
-  const currentStack = ensureOpenStack()
-  currentStack.position = { x: x, y: y }
+  const current = ensureOpenStack()
+  current.position = { x: x, y: y }
 }
 
 _u.text = (text: string, style?: string): void => {
-  const currentStack = ensureOpenStack()
-  currentStack.text = text
-  currentStack.textStyle = style ?? ''
+  const current = ensureOpenStack()
+  current.text = text
+  current.textStyle = style ?? ''
 }
 
 _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
-  const currentStack = ensureOpenStack()
+  const current = ensureOpenStack()
 
   let padding = <Area>{}
   if (p3 != null && p4 != null) {
@@ -137,10 +113,10 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
     padding.l = p1
   }
 
-  currentStack.padding = padding
+  current.padding = padding
 }
 
-const applyTransforms = (stack: Stack, sRef: StackReference, parent: RenderReference): void => {
+const applyTransforms = (stack: Container, sRef: ContainerReference, parent: RenderReference): void => {
   // Apply properties to container
   const c = stack.container
   // Begin fill

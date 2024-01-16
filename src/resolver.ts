@@ -3,7 +3,7 @@ import { Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { Style, _underlineStyle, getStyle } from './_uStyle'
 import { _uGlobal } from './_uGlobal'
 import { Text, TextMetrics, TextStyle } from 'pixi.js'
-import { Stack, StackReference } from './stacks'
+import { Container, ContainerReference } from './stacks'
 
 /*
 const resolvePaddings = (stack: StackReference, parent: RenderReference): void => {
@@ -27,7 +27,7 @@ const resolvePaddings = (stack: StackReference, parent: RenderReference): void =
   }
 }*/
 
-const resolveDimensions = (stack: Stack, parent: Dimensions<number>): Dimensions<number> => {
+const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimensions<number> => {
   let dRef = <Dimensions<number>>{}
   switch (true) {
     /**
@@ -81,7 +81,11 @@ const resolveDimensions = (stack: Stack, parent: Dimensions<number>): Dimensions
   return dRef
 }
 
-const resolvePositions = (stack: Stack, parentP: Position<number>, parentD: Dimensions<number>): Position<number> => {
+const resolvePositions = (
+  stack: Container,
+  parentP: Position<number>,
+  parentD: Dimensions<number>
+): Position<number> => {
   let pRef = <Position<number>>{}
   switch (true) {
     /**
@@ -185,7 +189,12 @@ type TextReference = {
   dimensions: Dimensions<number>
 }
 
-export const resolveText = (stack: Stack, stackD: Dimensions<number>, style: TextStyle, uStyle: Style): TextReference => {
+export const resolveText = (
+  stack: Container,
+  stackD: Dimensions<number>,
+  style: TextStyle,
+  uStyle: Style
+): TextReference => {
   // Create text object
   const t = new Text(stack.text, style)
   t.name = stack.name + '_text'
@@ -214,7 +223,7 @@ const resolveTextStyle = (uStyle: Style): TextStyle => {
   })
 }
 
-export const resolve = (stack: Stack, parent: RenderReference): StackReference => {
+export const resolve = (stack: Container, parent: RenderReference): ContainerReference => {
   // Resolve expressions
   let d = resolveDimensions(stack, parent.dimensions)
   const p = resolvePositions(stack, parent.position, parent.dimensions)
@@ -244,7 +253,7 @@ export const resolve = (stack: Stack, parent: RenderReference): StackReference =
     padding: stack.padding,
     text: tRef ? tRef.text : null,
     textStyle: tStyle,
-  } satisfies StackReference
+  } satisfies ContainerReference
 
   // resolvePaddings(sRef, stack, parent)
 
