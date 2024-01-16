@@ -3,7 +3,7 @@ import { Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { Style, _underlineStyle, getStyle } from './_uStyle'
 import { _uGlobal } from './_uGlobal'
 import { Text, TextMetrics, TextStyle } from 'pixi.js'
-import { Container, ContainerReference } from './stacks'
+import { Container, ContainerReference, ContainerStack, ReferenceStack } from './stacks'
 
 /*
 const resolvePaddings = (stack: StackReference, parent: RenderReference): void => {
@@ -27,6 +27,53 @@ const resolvePaddings = (stack: StackReference, parent: RenderReference): void =
   }
 }*/
 
+export const resolve = (stack: ContainerStack, parent: RenderReference): ReferenceStack => {
+  const ref = new Map()
+  stack.forEach((c: Container) => {
+    // Resolve container
+    const cRef = resolveContainer(c, c.parent ?? parent)
+    ref.set(c.name, cRef)
+  })
+  return ref
+}
+
+export const resolveContainer = (container: Container, parent: RenderReference | Container): ContainerReference => {
+  // Resolve expressions
+  let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
+  const p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
+
+  let tRef = null
+  let tStyle = null
+  if (container.text != null) {
+    // Get given style or default fallback
+    const uStyle = getStyle(container.textStyle)
+    tStyle = resolveTextStyle(uStyle)
+    tRef = resolveText(container, d, tStyle, uStyle)
+    // If the stack doesnt have dimensions, it scales of of the text dimensions
+    // in which case we can just pass them on (even if its display absolute)
+    if (container.dimensions == null) {
+      d = { w: tRef.dimensions.w, h: tRef.dimensions.h }
+    }
+  }
+
+  const sRef = {
+    name: container.name,
+    container: container.container,
+    display: container.display,
+    dimensions: d,
+    position: p,
+    fill: container.fill,
+    border: container.border,
+    padding: container.padding,
+    text: tRef ? tRef.text : null,
+    textStyle: tStyle,
+  } satisfies ContainerReference
+
+  // resolvePaddings(sRef, stack, parent)
+
+  return sRef
+}
+
 const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimensions<number> => {
   let dRef = <Dimensions<number>>{}
   switch (true) {
@@ -37,7 +84,7 @@ const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimens
      */
     case stack.display === DisplayFlag.Absolute && stack.dimensions == null:
       // Otherwise print a warning that no dimensions are set
-      console.warn(`Current stack is absolute but has no dimensions: ${stack}`)
+      console.warn(`Current stack is absolute but has no dimensions: ${stack} will not display`)
       dRef = { w: 0, h: 0 }
       break
     /**
@@ -83,6 +130,7 @@ const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimens
 
 const resolvePositions = (
   stack: Container,
+  stackD: Dimensions<number>,
   parentP: Position<number>,
   parentD: Dimensions<number>
 ): Position<number> => {
@@ -116,13 +164,13 @@ const resolvePositions = (
         break
       }
 
-      pRef = evaluatePosition(stack.position!, stack.dimensions!, _uGlobal.resolution)
+      pRef = evaluatePosition(stack.position!, stackD, _uGlobal.resolution)
       break
     /**
      * Display Inherit - Position specified
      */
     case stack.display === DisplayFlag.Inherit && stack.position != null:
-      pRef = evaluatePosition(stack.position!, stack.dimensions!, parentD)
+      pRef = evaluatePosition(stack.position!, stackD, parentD)
       // Add parents position to the evaluated stack position
       pRef.x = (pRef.x as number) + (parentP.x as number)
       pRef.y = (pRef.y as number) + (parentP.y as number)
@@ -221,41 +269,4 @@ const resolveTextStyle = (uStyle: Style): TextStyle => {
     fontSize: uStyle.size,
     fill: uStyle.color,
   })
-}
-
-export const resolve = (stack: Container, parent: RenderReference): ContainerReference => {
-  // Resolve expressions
-  let d = resolveDimensions(stack, parent.dimensions)
-  const p = resolvePositions(stack, parent.position, parent.dimensions)
-
-  let tRef = null
-  let tStyle = null
-  if (stack.text != null) {
-    // Get given style or default fallback
-    const uStyle = getStyle(stack.textStyle)
-    tStyle = resolveTextStyle(uStyle)
-    tRef = resolveText(stack, d, tStyle, uStyle)
-    // If the stack doesnt have dimensions, it scales of of the text dimensions
-    // in which case we can just pass them on (even if its display absolute)
-    if (stack.dimensions == null) {
-      d = { w: tRef.dimensions.w, h: tRef.dimensions.h }
-    }
-  }
-
-  const sRef = {
-    name: stack.name,
-    container: stack.container,
-    display: stack.display,
-    dimensions: d,
-    position: p,
-    fill: stack.fill,
-    border: stack.border,
-    padding: stack.padding,
-    text: tRef ? tRef.text : null,
-    textStyle: tStyle,
-  } satisfies ContainerReference
-
-  // resolvePaddings(sRef, stack, parent)
-
-  return sRef
 }

@@ -38,10 +38,6 @@ _uStyle.begin = (name: string): void => {
   _stack[name] = _currentStack
 }
 
-_uStyle.end = (): void => {
-  _currentStack = null
-}
-
 _uStyle.font = (name: string): void => {
   const currentStack = ensureOpenStack()
   currentStack.font = name

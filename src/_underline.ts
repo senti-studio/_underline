@@ -1,6 +1,6 @@
 import { _uBase, Area, DisplayFlag, RenderReference } from './types'
 import { resolve } from './resolver'
-import { Container, ContainerReference, addReference, ensureOpenStack, getCurrentStack, setCurrent } from './stacks'
+import * as Stack from './stacks'
 
 export interface _underline extends _uBase {
   /**
@@ -47,53 +47,65 @@ export interface _underline extends _uBase {
 export const _u: _underline = <_underline>{}
 
 _u.renderTo = (reference: RenderReference): void => {
-  const current = ensureOpenStack()
-  if (current.parent != null) {
-    throw new Error('Stack still has children, did you forget to call end() somewhere?')
-  }
-  const resolvedStack = resolve(current, reference)
-  addReference(resolvedStack)
-  applyTransforms(current, resolvedStack, reference)
-  setCurrent(null)
+  // Resolve stack
+  const stack = Stack.pop()
+  const resolvedStack = resolve(stack, reference)
+  // Keep reference
+  console.log('resolved stack', resolvedStack)
+  Stack.addReference(resolvedStack)
+  // Draw to screen
+  draw(stack, resolvedStack, reference)
+  // Reset stack
+  stack.clear()
 }
 
-_u.begin = (name: string): void => {
-  setCurrent(new Container(name))
+_u.begin = (identifier: string): void => {
+  const idParts = Stack.determineParent(identifier)
+  // idParts can only be null or length 2
+  if (idParts == null) {
+    // Push main container to stack
+    Stack.push(new Stack.Container(identifier))
+  } else {
+    const parent = Stack.find(idParts[0])
+    if (parent == null) throw new Error(`Parent container ${idParts[0]} not found`)
+    // Push child to parent container
+    Stack.push(new Stack.Container(idParts[1], parent))
+  }
 }
 
 _u.dimension = (w: number | string, h: number | string): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
   current.dimensions = { w: w, h: h }
 }
 
 _u.fill = (color: string): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
   current.fill = color
 }
 
 _u.display = (type: DisplayFlag): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
   current.display = type
 }
 
 _u.border = (width: number, color: string): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
   current.border = { width: width, color: color }
 }
 
 _u.position = (x: number | string, y: number | string): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
   current.position = { x: x, y: y }
 }
 
 _u.text = (text: string, style?: string): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
   current.text = text
   current.textStyle = style ?? ''
 }
 
 _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
-  const current = ensureOpenStack()
+  const current = Stack.ensureOpenStack()
 
   let padding = <Area>{}
   if (p3 != null && p4 != null) {
@@ -116,20 +128,34 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
   current.padding = padding
 }
 
-const applyTransforms = (stack: Container, sRef: ContainerReference, parent: RenderReference): void => {
-  // Apply properties to container
-  const c = stack.container
+const draw = (
+  stack: Stack.ContainerStack,
+  stackRef: Stack.ReferenceStack,
+  parent: RenderReference | Stack.ContainerReference
+): void => {
+  stack.forEach((c: Stack.Container) => {
+    // Draw container
+    drawContainer(c, stackRef, parent)
+  })
+}
+
+const drawContainer = (
+  current: Stack.Container,
+  stack: Stack.ReferenceStack,
+  parent: RenderReference | Stack.ContainerReference
+): void => {
+  const c = current.container
   // Begin fill
-  if (stack.fill != null) c.beginFill(stack.fill as string)
+  if (current.fill != null) c.beginFill(current.fill as string)
   // Draw border
-  if (stack.border != null) {
-    c.lineStyle(stack.border!.width, stack.border!.color ?? '#000')
+  if (current.border != null) {
+    c.lineStyle(current.border!.width, current.border!.color ?? '#000')
   }
 
   // Draw text
   /*if (stack.text !== '') {
     const t = resolveText(stack)
-    c.addChild(t!.container)
+    c.addChild(t!.Stack.Container)
     // Address dimensions
     if (stack.display === DisplayFlag.Absolute) {
       // After we have dimensions, we need to reevaluate
@@ -137,13 +163,14 @@ const applyTransforms = (stack: Container, sRef: ContainerReference, parent: Ren
       resolvePosition(stack, parent.position, parent.dimensions)
       // We also need to reevaluate the text position
       // now that the dimensions may have changed
-      const ct = stack.container.getChildByName(stack.name + '_text')!
+      const ct = stack.Stack.Container.getChildByName(stack.name + '_text')!
       ct.x += stack.position!.x as number
       ct.y += stack.position!.y as number
     }
   }*/
   // Draw shape
-  c.drawRect(sRef.position.x, sRef.position.y, sRef.dimensions.w, sRef.dimensions.h)
+  const cRef = stack.get(current.name)!
+  c.drawRect(cRef.position.x, cRef.position.y, cRef.dimensions.w, cRef.dimensions.h)
   // Add to parent
   parent.container.addChild(c)
 }

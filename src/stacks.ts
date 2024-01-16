@@ -1,7 +1,11 @@
 import * as PIXI from 'pixi.js'
 import { Area, Border, Dimensions, DisplayFlag, Position } from './types'
 
-const _stack: Map<string, ContainerReference> = new Map()
+export type ContainerStack = Map<string, Container>
+export type ReferenceStack = Map<string, ContainerReference>
+
+const _containerStack: ContainerStack = new Map()
+let _referenceStack: ReferenceStack = new Map()
 let _currentContainer: Container | null = null
 
 export interface ContainerReference {
@@ -64,15 +68,36 @@ export class Container {
   }
 }
 
-export const setCurrent = (stack: Container | null): void => {
-  _currentContainer = stack
-}
-export const getCurrentStack = (): Container | null => {
-  return _currentContainer
+export const determineParent = (identifier: string): Array<string> | null => {
+  identifier = identifier.replace(/\s/g, '') // Remove whitespace
+  // Parse identifier string and split into parts based on > character
+  const parts = identifier.split('>')
+  // If there is only one part, then the parent is null
+  // Which makes this the root container
+  if (parts.length === 1) {
+    return null
+  }
+  // Otherwise, we know that index 0 is the parent and index 1 is the child
+  // If there are more > we gracefully ignore them
+  return [parts[0], parts[1]]
 }
 
-export const addReference = (ref: ContainerReference): void => {
-  _stacks.push(ref)
+export const push = (stack: Container): void => {
+  _currentContainer = stack
+  _containerStack.set(stack.name, stack)
+}
+
+export const find = (identifier: string): Container | null => {
+  return _containerStack.get(identifier) ?? null
+}
+
+export const addReference = (ref: ReferenceStack): void => {
+  _referenceStack = ref
+}
+
+export const pop = (): ContainerStack => {
+  _currentContainer = null
+  return _containerStack
 }
 
 export const ensureOpenStack = (): Container => {

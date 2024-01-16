@@ -44,6 +44,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
+    "vite-bundle-visualizer": "^1.0.0",
     "vitest": "^1.1.0",
     "vitest-canvas-mock": "^0.3.3"
   },
