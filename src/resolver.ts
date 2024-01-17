@@ -5,34 +5,36 @@ import { _uGlobal } from './_uGlobal'
 import { Text, TextMetrics, TextStyle } from 'pixi.js'
 import { Container, ContainerReference, ContainerStack, ReferenceStack } from './stacks'
 
-/*
-const resolvePaddings = (stack: StackReference, parent: RenderReference): void => {
-  if (parent.paddings == null) return
-  if (stack.display === DisplayFlag.Absolute) return
-
-  //Left side touches
-  stack.position.x += parent.paddings.l
-  // Right side touches
-  if (stack.dimensions.w >= parent.dimensions.w) {
-    stack.dimensions.w -= parent.paddings.r
-  }
-  // Top side touches
-  stack.position.y += parent.paddings.t
-  // Bottom side touches
-  if (stack.dimensions.h >= parent.dimensions.h) {
-    // Keep it inside parents boundries
-    stack.dimensions.h = parent.dimensions.h
-    // Subtract the padding
-    stack.dimensions.h -= parent.paddings.b
-  }
-}*/
-
 export const resolve = (stack: ContainerStack, parent: RenderReference): ReferenceStack => {
   const ref = new Map()
+  let flex = false
+  let flexParent = null
+  let flexChildren: Array<Container> = []
   stack.forEach((c: Container) => {
-    // Resolve container
-    const cRef = resolveContainer(c, c.parent ?? parent)
-    ref.set(c.name, cRef)
+    if (c.display === DisplayFlag.Absolute || c.display === DisplayFlag.Inherit) {
+      flex = false
+    }
+    if (flex) {
+      flexChildren.push(c)
+    } else {
+      // Resole any flex children before continuing
+      if (flexChildren.length > 0) {
+        const flexRef = resolveFlex(flexParent!, flexChildren)
+        flexRef.forEach((c: ContainerReference) => {
+          ref.set(c.name, c)
+        })
+        flexChildren = []
+        flexParent = null
+      }
+      // Resolve container
+      const cRef = resolveContainer(c, c.parent ?? parent)
+      ref.set(c.name, cRef)
+      // If display is FlexRow or FlexCol -> resolve flex
+      if (c.display === DisplayFlag.FlexRow || c.display === DisplayFlag.FlexCol) {
+        flex = true
+        flexParent = cRef
+      }
+    }
   })
   return ref
 }
@@ -195,55 +197,6 @@ const resolvePositions = (
   return pRef
 }
 
-/*
-const resolveFlex = (stack: StackReference, parent: RenderReference): StackReference => {
-  if (stack.dimensions == null) {
-    throw new Error(`No dimensions provided for flex parent ${stack}`)
-  }
-
-  const maxSpace =
-    stack.display === DisplayFlag.FlexRow
-      ? (stack.dimensions.w as number) // Left to right display
-      : (stack.dimensions.h as number) // Top to bottom display
-
-  let fixedSpace = 0
-  let dynamicCount = 0
-  // Calculate space
-  stack.children.forEach((c: Stack) => {
-    if (c.display === DisplayFlag.FlexFixed) {
-      if (c.dimensions == null) {
-        throw new Error(`No dimensions provided for fixed flex child ${c}`)
-      }
-      fixedSpace += c.dimensions.w as number // fixed container cant have expressions
-    } else if (c.display === DisplayFlag.FlexDynamic) {
-      ++dynamicCount
-    } else {
-      throw new Error(`No flex display option provided for ${c}`)
-    }
-  })
-
-  const dynamicMaxSpace = maxSpace - fixedSpace
-  const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
-  // Apply dimensions
-  stack.children.forEach((c: Stack) => {
-    const cDraw = <DrawReference>{
-      position: c.position,
-      dimensions: c.dimensions,
-    }
-    //TODO: Recursive call for all children
-    // prettier-ignore
-    if (c.display === DisplayFlag.FlexDynamic) {
-      stack.display === DisplayFlag.FlexRow 
-        ? (cDraw.dimensions.w = dynamicSpacePerChild) 
-        : (cDraw.dimensions.h = dynamicSpacePerChild)
-    }
-    const cRef = <StackReference>{ name: c.name, ref: cDraw }
-    ref.children.push(cRef)
-  })
-
-  return ref
-}*/
-
 type TextReference = {
   text: Text
   position: Position<number>
@@ -284,4 +237,66 @@ const resolveTextStyle = (uStyle: Style): TextStyle => {
     fontSize: uStyle.size,
     fill: uStyle.color,
   })
+}
+
+const resolveFlex = (parent: Container, children: Array<Container>): Array<ContainerReference> => {
+  const maxSpace =
+    parent.display === DisplayFlag.FlexRow
+      ? (parent.dimensions!.w as number) // Left to right display
+      : (parent.dimensions!.h as number) // Top to bottom display
+
+  let fixedSpace = 0
+  let dynamicCount = 0
+  // Calculate space
+  children.forEach((c: Container) => {
+    if (c.display === DisplayFlag.FlexFixed) {
+      if (c.dimensions == null) {
+        throw new Error(`No dimensions provided for fixed flex child ${c}`)
+      }
+      fixedSpace += c.dimensions.w as number // fixed container cant have expressions
+    } else if (c.display === DisplayFlag.FlexDynamic) {
+      ++dynamicCount
+    } else {
+      throw new Error(`No flex display option provided for ${c}`)
+    }
+  })
+
+  const dynamicMaxSpace = maxSpace - fixedSpace
+  const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
+
+  // Apply dimensions
+  const ref: Array<ContainerReference> = []
+  children.forEach((c: Container) => {
+    const cP = <Position<number>>{
+      x: c.position!.x,
+      y: c.position!.y,
+    }
+    const cD = <Dimensions<number>>{
+      w: c.dimensions!.w,
+      h: c.dimensions!.h,
+    }
+    //TODO: Recursive call for all children
+    // prettier-ignore
+    if (c.display === DisplayFlag.FlexDynamic) {
+      parent.display === DisplayFlag.FlexRow 
+        ? (cD.w = dynamicSpacePerChild) 
+        : (cD.h = dynamicSpacePerChild)
+    }
+    const cRef = (<ContainerReference>{
+      name: c.name,
+      container: c.container,
+      display: c.display,
+      position: cP,
+      dimensions: cD,
+      border: c.border,
+      padding: c.padding,
+      fill: c.fill,
+      text: c.text,
+      textStyle: c.textStyle,
+    }) satisfies ContainerReference
+
+    ref.push(cRef)
+  })
+
+  return ref
 }
