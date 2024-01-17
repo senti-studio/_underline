@@ -29,8 +29,8 @@ export class Container {
   public position: Position<number | string> | null = null
   public padding: Area | null = null
   public fill: string | null = null
-  public text: string = ''
-  public textStyle: string = ''
+  public text: string | null = null
+  public textStyle: string | null = null
 
   constructor(
     public readonly name: string,

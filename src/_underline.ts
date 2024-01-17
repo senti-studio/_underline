@@ -51,7 +51,6 @@ _u.renderTo = (reference: RenderReference): void => {
   const stack = Stack.pop()
   const resolvedStack = resolve(stack, reference)
   // Keep reference
-  console.log('resolved stack', resolvedStack)
   Stack.addReference(resolvedStack)
   // Draw to screen
   draw(stack, resolvedStack, reference)
@@ -145,6 +144,7 @@ const drawContainer = (
   parent: RenderReference | Stack.ContainerReference
 ): void => {
   const c = current.container
+  const cRef = stack.get(current.name)!
   // Begin fill
   if (current.fill != null) c.beginFill(current.fill as string)
   // Draw border
@@ -153,23 +153,10 @@ const drawContainer = (
   }
 
   // Draw text
-  /*if (stack.text !== '') {
-    const t = resolveText(stack)
-    c.addChild(t!.Stack.Container)
-    // Address dimensions
-    if (stack.display === DisplayFlag.Absolute) {
-      // After we have dimensions, we need to reevaluate
-      // the position expressions (in case there are some)
-      resolvePosition(stack, parent.position, parent.dimensions)
-      // We also need to reevaluate the text position
-      // now that the dimensions may have changed
-      const ct = stack.Stack.Container.getChildByName(stack.name + '_text')!
-      ct.x += stack.position!.x as number
-      ct.y += stack.position!.y as number
-    }
-  }*/
+  if (current.text != null) {
+    c.addChild(cRef.text!)
+  }
   // Draw shape
-  const cRef = stack.get(current.name)!
   c.drawRect(cRef.position.x, cRef.position.y, cRef.dimensions.w, cRef.dimensions.h)
   // Add to parent
   parent.container.addChild(c)
