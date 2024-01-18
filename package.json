@@ -34,7 +34,10 @@
     "build": "tsup",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "report": "npx vite preview --outDir html"
+    "report": "npx vite preview --outDir html",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^1.2.0",
@@ -44,7 +47,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",
-    "vite-bundle-visualizer": "^1.0.0",
+    "vitepress": "^1.0.0-rc.39",
     "vitest": "^1.1.0",
     "vitest-canvas-mock": "^0.3.3"
   },
