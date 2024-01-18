@@ -11,35 +11,59 @@ export const resolve = (stack: ContainerStack, parent: RenderReference): Referen
   let flexParent = null
   let flexChildren: Array<Container> = []
   stack.forEach((c: Container) => {
-    if (c.display === DisplayFlag.Absolute || c.display === DisplayFlag.Inherit) {
-      flex = false
-    }
+    // Whenever we encounter absiolute or inherit, we stop the flex process
+    flex = c.isFlex()
+    // If we are currently in a flex process, we push the child to the flex children
     if (flex) {
-      flexChildren.push(c)
+      if (c.flex == DisplayFlag.FlexRow || c.flex == DisplayFlag.FlexCol) {
+        flexParent = c
+      } else {
+        flexChildren.push(c)
+      }
     } else {
-      // Resole any flex children before continuing
+      // If we are not in a flex, we need to resolve all previous flex children
+      // Before we can resolve the current container
       if (flexChildren.length > 0) {
-        const flexRef = resolveFlex(flexParent!, flexChildren)
+        const flexRef = resolveFlex(ref.get(c.parent?.name) ?? parent, flexParent!, flexChildren)
         flexRef.forEach((c: ContainerReference) => {
+          // Push to same ref to keep the stack flat and in order
           ref.set(c.name, c)
         })
         flexChildren = []
         flexParent = null
       }
-      // Resolve container
-      const cRef = resolveContainer(c, c.parent ?? parent)
+      // Resolve current container
+      const cRef = resolveContainer(c, ref.get(c.parent?.name) ?? parent)
       ref.set(c.name, cRef)
-      // If display is FlexRow or FlexCol -> resolve flex
-      if (c.display === DisplayFlag.FlexRow || c.display === DisplayFlag.FlexCol) {
+      // There were no previous flex children, but this one could start a new flex
+      // If display is FlexRow or FlexCol
+      if (c.flex != null) {
         flex = true
         flexParent = cRef
       }
     }
   })
+
+  // Whenever we leave the loop with a flex process open, we need to resolve
+  // before returning
+  //TODO: Refactor to nicer code (duplicate from above)
+  if (flexChildren.length > 0) {
+    const flexRef = resolveFlex(ref.get(flexParent!.parent?.name) ?? parent, flexParent!, flexChildren)
+    flexRef.forEach((c: ContainerReference) => {
+      // Push to same ref to keep the stack flat and in order
+      ref.set(c.name, c)
+    })
+    flexChildren = []
+    flexParent = null
+  }
+
   return ref
 }
 
-export const resolveContainer = (container: Container, parent: RenderReference | Container): ContainerReference => {
+export const resolveContainer = (
+  container: Container,
+  parent: RenderReference | ContainerReference
+): ContainerReference => {
   // Resolve expressions
   let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
   d = resolvePaddings(container, d)
@@ -239,25 +263,31 @@ const resolveTextStyle = (uStyle: Style): TextStyle => {
   })
 }
 
-const resolveFlex = (parent: Container, children: Array<Container>): Array<ContainerReference> => {
+const resolveFlex = (
+  parent: ContainerReference | RenderReference,
+  flexParent: Container,
+  children: Array<Container>
+): Array<ContainerReference> => {
+  const pRef = resolveContainer(flexParent, parent)
+
   const maxSpace =
-    parent.display === DisplayFlag.FlexRow
-      ? (parent.dimensions!.w as number) // Left to right display
-      : (parent.dimensions!.h as number) // Top to bottom display
+    flexParent.flex === DisplayFlag.FlexRow
+      ? (pRef.dimensions!.w as number) // Left to right display
+      : (pRef.dimensions!.h as number) // Top to bottom display
 
   let fixedSpace = 0
   let dynamicCount = 0
   // Calculate space
   children.forEach((c: Container) => {
-    if (c.display === DisplayFlag.FlexFixed) {
+    if (c.flex === DisplayFlag.FlexFixed) {
       if (c.dimensions == null) {
-        throw new Error(`No dimensions provided for fixed flex child ${c}`)
+        throw new Error(`No dimensions provided for fixed flex child ${c.name}`)
       }
       fixedSpace += c.dimensions.w as number // fixed container cant have expressions
-    } else if (c.display === DisplayFlag.FlexDynamic) {
+    } else if (c.flex === DisplayFlag.FlexDynamic) {
       ++dynamicCount
     } else {
-      throw new Error(`No flex display option provided for ${c}`)
+      throw new Error(`No flex display option provided for ${c.name}`)
     }
   })
 
@@ -268,35 +298,26 @@ const resolveFlex = (parent: Container, children: Array<Container>): Array<Conta
   const ref: Array<ContainerReference> = []
   children.forEach((c: Container) => {
     const cP = <Position<number>>{
-      x: c.position!.x,
-      y: c.position!.y,
+      x: c.position ? c.position.x : 0,
+      y: c.position ? c.position.y : 0,
     }
     const cD = <Dimensions<number>>{
-      w: c.dimensions!.w,
-      h: c.dimensions!.h,
+      w: c.dimensions ? c.dimensions.w : 0,
+      h: c.dimensions ? c.dimensions.h : 0,
     }
     //TODO: Recursive call for all children
     // prettier-ignore
-    if (c.display === DisplayFlag.FlexDynamic) {
-      parent.display === DisplayFlag.FlexRow 
+    if (c.flex === DisplayFlag.FlexDynamic) {
+      flexParent.flex === DisplayFlag.FlexRow 
         ? (cD.w = dynamicSpacePerChild) 
         : (cD.h = dynamicSpacePerChild)
     }
-    const cRef = (<ContainerReference>{
-      name: c.name,
-      container: c.container,
-      display: c.display,
-      position: cP,
-      dimensions: cD,
-      border: c.border,
-      padding: c.padding,
-      fill: c.fill,
-      text: c.text,
-      textStyle: c.textStyle,
-    }) satisfies ContainerReference
+    c.dimensions = cD
+    c.position = cP
+    const cRef = resolveContainer(c, pRef)
 
     ref.push(cRef)
   })
-
+  console.log('flex ref is', ref)
   return ref
 }

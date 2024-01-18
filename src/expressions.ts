@@ -5,7 +5,7 @@ export const evaluateDimensions = (
   parent: Dimensions<number | string>
 ): Dimensions<number> => {
   if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
-    throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
+    throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent.w}, ${parent.h}`)
   }
 
   const w = expToNumber(ref.w, parent.w as number, TransformType.Width)
@@ -18,7 +18,7 @@ export const evaluatePosition = (
   parent: Dimensions<number | string>
 ): Position<number> => {
   if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
-    throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent}`)
+    throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent.w}, ${parent.h}`)
   }
   if (typeof refD.w !== 'number' || typeof refD.h !== 'number') {
     throw new Error(`Current stack has unresolved/invalid dimensions: ${refD}`)

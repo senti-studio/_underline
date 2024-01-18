@@ -25,6 +25,12 @@ export interface _underline extends _uBase {
    */
   display(type: DisplayFlag): void
   /**
+   * Default display is Inherit.
+   * @param type - Display type of the shape, for example Flex, Absolute, ...
+   * @param additional - Possibility to add an additional property for a flex container, example Inherit, Absolute
+   */
+  display(type: DisplayFlag, additional: DisplayFlag): void
+  /**
    * Adds a border to the shape.
    * @param width - Border width
    * @param color - Border color
@@ -82,9 +88,22 @@ _u.fill = (color: string): void => {
   current.fill = color
 }
 
-_u.display = (type: DisplayFlag): void => {
+_u.display = (...types: DisplayFlag[]): void => {
   const current = Stack.ensureOpenStack()
-  current.display = type
+
+  types.forEach((type: DisplayFlag) => {
+    if (type === DisplayFlag.Inherit || type === DisplayFlag.Absolute) {
+      current.display = type
+    }
+    if (
+      type === DisplayFlag.FlexCol ||
+      type === DisplayFlag.FlexRow ||
+      type === DisplayFlag.FlexDynamic ||
+      type === DisplayFlag.FlexFixed
+    ) {
+      current.flex = type
+    }
+  })
 }
 
 _u.border = (width: number, color: string): void => {

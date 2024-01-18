@@ -24,6 +24,7 @@ export interface ContainerReference {
 export class Container {
   public readonly container: PIXI.Graphics = new PIXI.Graphics()
   public display: DisplayFlag = DisplayFlag.Inherit
+  public flex: DisplayFlag | null = null
   public dimensions: Dimensions<number | string> | null = null
   public border: Border | null = null
   public position: Position<number | string> | null = null
@@ -46,6 +47,16 @@ export class Container {
 
   public add(child: Container): void {
     this._children.push(child)
+  }
+
+  public isFlex(): boolean {
+    if (this.flex != null) {
+      return true
+    }
+    if (this.display === DisplayFlag.FlexCol || this.display === DisplayFlag.FlexRow) {
+      return true
+    }
+    return false
   }
 
   public hasExpressions(transform: Position<number | string> | Dimensions<number | string>): boolean {
