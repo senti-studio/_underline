@@ -3,23 +3,31 @@
 layout: home
 
 hero:
-  name: "_underline ui"
-  text: "Tiny gui for pixijs inspired by DearImGui and CSS"
-  tagline: My great project tagline
+  name: '_underline'
+  text: 'UI for humans'
+  tagline: Tiny gui library inspired by DearImGui and CSS
+  image:
+    src: /media/underline_header_dark.png
+    alt: underline header image
   actions:
     - theme: brand
-      text: Markdown Examples
-      link: /markdown-examples
+      text: Get Started
+      link: /guide
     - theme: alt
-      text: API Examples
+      text: Why _underline?
       link: /api-examples
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/Tiny-Tales/_underline
 
 features:
-  - title: Feature A
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature B
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
-  - title: Feature C
-    details: Lorem ipsum dolor sit amet, consectetur adipiscing elit
+  - title: Quick & Easy
+    icon: 🚀
+    details: _underline makes writing prototypes or complex designs a breeze!
+  - title: CSS inspired
+    icon: 🎨
+    details: Design dynamic UI components with familiar attributes.
+  - title: Don't write what you don't need
+    icon: 🌋
+    details: _underline is very fault tolerant, with useful defaults.
 ---
-

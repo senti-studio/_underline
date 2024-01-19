@@ -71,11 +71,13 @@ export const resolveContainer = (
   // We make sure that the container doesnt go out of bounds
   // Can happen when position is not 0 and dimensions are set to 100%
   if (container.position != null && typeof container.position.x === 'number') {
+    // Check the initial x position + resolved width
     if (container.position.x + d.w > parent.dimensions.w) {
       d.w = parent.dimensions.w - container.position.x
     }
   }
   if (container.position != null && typeof container.position.y === 'number') {
+    // Check the initial y position + resolved height
     if (container.position.y + d.h > parent.dimensions.h) {
       d.h = parent.dimensions.h - container.position.y
     }
