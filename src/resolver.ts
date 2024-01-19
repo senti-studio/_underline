@@ -68,6 +68,18 @@ export const resolveContainer = (
   let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
   d = resolvePaddings(container, d)
   let p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
+  // We make sure that the container doesnt go out of bounds
+  // Can happen when position is not 0 and dimensions are set to 100%
+  if (container.position != null && typeof container.position.x === 'number') {
+    if (container.position.x + d.w > parent.dimensions.w) {
+      d.w = parent.dimensions.w - container.position.x
+    }
+  }
+  if (container.position != null && typeof container.position.y === 'number') {
+    if (container.position.y + d.h > parent.dimensions.h) {
+      d.h = parent.dimensions.h - container.position.y
+    }
+  }
 
   let tRef = null
   let tStyle = null
@@ -268,7 +280,9 @@ const resolveFlex = (
   flexParent: Container,
   children: Array<Container>
 ): Array<ContainerReference> => {
+  const ref: Array<ContainerReference> = []
   const pRef = resolveContainer(flexParent, parent)
+  ref.push(pRef)
 
   const maxSpace =
     flexParent.flex === DisplayFlag.FlexRow
@@ -294,8 +308,8 @@ const resolveFlex = (
   const dynamicMaxSpace = maxSpace - fixedSpace
   const dynamicSpacePerChild = dynamicMaxSpace / dynamicCount
 
-  // Apply dimensions
-  const ref: Array<ContainerReference> = []
+  // Apply dimension
+  let currentPosition = 0
   children.forEach((c: Container) => {
     const cP = <Position<number>>{
       x: c.position ? c.position.x : 0,
@@ -306,18 +320,27 @@ const resolveFlex = (
       h: c.dimensions ? c.dimensions.h : 0,
     }
     //TODO: Recursive call for all children
-    // prettier-ignore
     if (c.flex === DisplayFlag.FlexDynamic) {
-      flexParent.flex === DisplayFlag.FlexRow 
-        ? (cD.w = dynamicSpacePerChild) 
-        : (cD.h = dynamicSpacePerChild)
+      if (flexParent.flex === DisplayFlag.FlexRow) {
+        cD.w = dynamicSpacePerChild
+        cD.h = pRef.dimensions!.h as number
+      } else {
+        cD.h = dynamicSpacePerChild
+        cD.w = pRef.dimensions!.w as number
+      }
     }
+    if (flexParent.flex === DisplayFlag.FlexRow) {
+      cP.x = currentPosition
+    } else {
+      cP.y = currentPosition
+    }
+    currentPosition += cD.w as number
+
     c.dimensions = cD
     c.position = cP
-    const cRef = resolveContainer(c, pRef)
 
+    const cRef = resolveContainer(c, pRef)
     ref.push(cRef)
   })
-  console.log('flex ref is', ref)
   return ref
 }

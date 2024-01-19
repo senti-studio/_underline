@@ -151,10 +151,9 @@ const draw = (
   stackRef: Stack.ReferenceStack,
   parent: RenderReference | Stack.ContainerReference
 ): void => {
-  stack.forEach((c: Stack.Container) => {
-    // Draw container
-    drawContainer(c, stackRef, parent)
-  })
+  console.log('stack', stack)
+  console.log('stackRef', stackRef)
+  stack.forEach((c: Stack.Container) => drawContainer(c, stackRef, parent))
 }
 
 const drawContainer = (
