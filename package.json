@@ -35,9 +35,9 @@
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "report": "npx vite preview --outDir html",
+    "preview": "npx vite preview --outDir html",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:build": "vitepress build docs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^1.2.0",

@@ -4,10 +4,10 @@ layout: home
 
 hero:
   name: '_underline'
-  text: 'UI for humans'
+  text: 'A UI library for humans'
   tagline: Tiny gui library inspired by DearImGui and CSS
   image:
-    src: /media/underline_header_dark.png
+    src: /media/underline_logo.png
     alt: underline header image
   actions:
     - theme: brand
