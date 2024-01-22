@@ -1,27 +1,40 @@
 import { defineConfig } from 'vitepress'
 
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: '_underline UI',
+  lang: 'en-US',
   base: '/_underline/',
+  title: '_underline UI',
   description: 'Tiny gui for pixijs inspired by DearImGui and CSS',
   themeConfig: {
-    // https://vitepress.dev/reference/default-theme-config
+    logo: '/u_logo.png',
+    siteTitle: false,
+    search: {
+      provider: 'local',
+    },
     nav: [
-      { text: 'Guide', link: '/guide' },
-      { text: 'Config', link: '/config' },
-      { text: 'Plugins', link: '/plugins' },
+      { text: 'Guide', link: '/guide/' },
+      { text: 'Config', link: '/config/' },
+      { text: 'Plugins', link: '/plugins/' },
     ],
 
-    sidebar: [
-      {
-        text: 'Examples',
-        items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' },
-        ],
-      },
-    ],
+    sidebar: {
+      '/guide/': [
+        {
+          text: 'Guide',
+          items: [
+            { text: 'Why _underline?', link: '/guide/why' },
+            { text: 'Getting Started', link: '/guide/' },
+            { text: 'Features', link: '/guide/features' },
+          ],
+        },
+      ],
+      '/config/': [
+        {
+          text: 'Config',
+          items: [{ text: 'Configure _u', link: '/config/' }],
+        },
+      ],
+    },
 
     socialLinks: [
       { icon: 'x', link: 'https://twitter.com/white_paganini' },

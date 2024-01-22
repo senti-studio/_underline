@@ -1,5 +1,4 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
 layout: home
 
 hero:
@@ -12,10 +11,10 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /guide
+      link: /guide/guide
     - theme: alt
       text: Why _underline?
-      link: /api-examples
+      link: /guide/why
     - theme: alt
       text: View on GitHub
       link: https://github.com/Tiny-Tales/_underline
