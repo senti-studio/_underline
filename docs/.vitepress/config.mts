@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   title: '_underline UI',
+  base: '/_underline/',
   description: 'Tiny gui for pixijs inspired by DearImGui and CSS',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config

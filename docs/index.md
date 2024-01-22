@@ -7,7 +7,7 @@ hero:
   text: 'A UI library for humans'
   tagline: Tiny gui library inspired by DearImGui and CSS
   image:
-    src: /media/underline_logo.png
+    src: media/underline_logo.png
     alt: underline header image
   actions:
     - theme: brand
