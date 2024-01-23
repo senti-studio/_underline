@@ -35,12 +35,24 @@ test('success: dimension expression', () => {
   const parent = mockParent()
   const container = mockContainer()
   container.dimensions!.w = '100%' //-> 90 (100width - 10x)
-  container.dimensions!.h = '50%' //-> 50
+  container.dimensions!.h = '100%' //-> 90
   const stack = new Map()
   stack.set('main', container)
 
   const resolvedStack = resolve(stack, parent)
 
   expect(resolvedStack.get('main')?.dimensions.w).toBe(90)
-  expect(resolvedStack.get('main')?.dimensions.h).toBe(50)
+  expect(resolvedStack.get('main')?.dimensions.h).toBe(90)
+})
+
+test('success: position expression', () => {
+  const parent = mockParent()
+  const container = mockContainer()
+  container.position!.x = 'center' //-> 25 (100width/2 - 50width/2)
+  const stack = new Map()
+  stack.set('main', container)
+
+  const resolvedStack = resolve(stack, parent)
+
+  expect(resolvedStack.get('main')?.position.x).toBe(25)
 })
