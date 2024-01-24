@@ -1,5 +1,5 @@
 import { evaluateDimensions, evaluatePosition } from './expressions'
-import { Area, Dimensions, DisplayFlag, Position, RenderReference } from './types'
+import { Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { Style, _underlineStyle, getStyle } from './_uStyle'
 import { _uGlobal } from './_uGlobal'
 import { Text, TextMetrics, TextStyle } from 'pixi.js'
@@ -103,7 +103,7 @@ export const resolveContainer = (container: Container, parent: RenderReference |
     }
   }
 
-  const sRef = {
+  return {
     name: container.name,
     container: container.container,
     display: container.display,
@@ -111,12 +111,10 @@ export const resolveContainer = (container: Container, parent: RenderReference |
     position: p,
     fill: container.fill,
     border: container.border,
-    padding: container.padding,
+    // padding: container.padding,
     text: tRef ? tRef.text : null,
     textStyle: tStyle,
   } satisfies RenderReference
-
-  return sRef
 }
 
 const resolveDimensions = (container: Container, parent: Dimensions<number>): Dimensions<number> => {
@@ -191,6 +189,8 @@ const resolvePositions = (
      * Display Inherit - No position specified
      *
      * Use parent position.
+     * Unlike HTML/CSS the elements will not be displayed one after another top-down
+     * But rather stacked on top of each other.
      */
     case stack.display === DisplayFlag.Inherit && stack.position == null:
       pRef = parentP
@@ -211,6 +211,8 @@ const resolvePositions = (
       break
     /**
      * Display Inherit - Position specified
+     *
+     * Position relative to the parents position.
      */
     case stack.display === DisplayFlag.Inherit && stack.position != null:
       pRef = evaluatePosition(stack.position!, stackD, parentD)
