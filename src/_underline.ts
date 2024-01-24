@@ -57,7 +57,7 @@ _u.renderTo = (reference: RenderReference): void => {
   const stack = Stack.pop()
   const resolvedStack = resolve(stack, reference)
   // Keep reference
-  Stack.addReference(resolvedStack)
+  //Stack.addReference(resolvedStack)
   // Draw to screen
   draw(stack, resolvedStack, reference)
   // Reset stack
@@ -146,21 +146,13 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
   current.padding = padding
 }
 
-const draw = (
-  stack: Stack.ContainerStack,
-  stackRef: Stack.ReferenceStack,
-  parent: RenderReference | Stack.ContainerReference
-): void => {
+const draw = (stack: Stack.ContainerStack, stackRef: Stack.ReferenceStack, parent: RenderReference): void => {
   console.log('stack', stack)
   console.log('stackRef', stackRef)
   stack.forEach((c: Stack.Container) => drawContainer(c, stackRef, parent))
 }
 
-const drawContainer = (
-  current: Stack.Container,
-  stack: Stack.ReferenceStack,
-  parent: RenderReference | Stack.ContainerReference
-): void => {
+const drawContainer = (current: Stack.Container, stack: Stack.ReferenceStack, parent: RenderReference): void => {
   const c = current.container
   const cRef = stack.get(current.name)!
   // Begin fill

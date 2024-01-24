@@ -1,14 +1,14 @@
 import { evaluateDimensions, evaluatePosition } from './expressions'
-import { Dimensions, DisplayFlag, Position, RenderReference } from './types'
+import { Area, Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { Style, _underlineStyle, getStyle } from './_uStyle'
 import { _uGlobal } from './_uGlobal'
 import { Text, TextMetrics, TextStyle } from 'pixi.js'
-import { Container, ContainerReference, ContainerStack, ReferenceStack } from './stacks'
+import { Container, ContainerStack, ReferenceStack } from './stacks'
 
 export const resolve = (stack: ContainerStack, parent: RenderReference): ReferenceStack => {
   const ref = new Map()
   let flex = false
-  let flexParent = null
+  let flexParent: Container | null = null
   let flexChildren: Array<Container> = []
   stack.forEach((c: Container) => {
     // Whenever we encounter absiolute or inherit, we stop the flex process
@@ -25,7 +25,7 @@ export const resolve = (stack: ContainerStack, parent: RenderReference): Referen
       // Before we can resolve the current container
       if (flexChildren.length > 0) {
         const flexRef = resolveFlex(ref.get(c.parent?.name) ?? parent, flexParent!, flexChildren)
-        flexRef.forEach((c: ContainerReference) => {
+        flexRef.forEach((c: RenderReference) => {
           // Push to same ref to keep the stack flat and in order
           ref.set(c.name, c)
         })
@@ -39,7 +39,7 @@ export const resolve = (stack: ContainerStack, parent: RenderReference): Referen
       // If display is FlexRow or FlexCol
       if (c.flex != null) {
         flex = true
-        flexParent = cRef
+        flexParent = c
       }
     }
   })
@@ -49,24 +49,27 @@ export const resolve = (stack: ContainerStack, parent: RenderReference): Referen
   //TODO: Refactor to nicer code (duplicate from above)
   if (flexChildren.length > 0) {
     const flexRef = resolveFlex(ref.get(flexParent!.parent?.name) ?? parent, flexParent!, flexChildren)
-    flexRef.forEach((c: ContainerReference) => {
+    flexRef.forEach((c: RenderReference) => {
       // Push to same ref to keep the stack flat and in order
       ref.set(c.name, c)
     })
     flexChildren = []
     flexParent = null
   }
+  // Resolve flex parent without children
+  // We do this to remain fault tolerant
+  // (even if flex doesnt make sence on this container)
+  if (flexParent != null) {
+    const pRef = resolveContainer(flexParent, ref.get((flexParent as Container).parent?.name) ?? parent)
+    ref.set(pRef.name, pRef)
+  }
 
   return ref
 }
 
-export const resolveContainer = (
-  container: Container,
-  parent: RenderReference | ContainerReference
-): ContainerReference => {
+export const resolveContainer = (container: Container, parent: RenderReference | RenderReference): RenderReference => {
   // Resolve expressions
   let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
-  d = resolvePaddings(container, d)
   let p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
   // We make sure that the container doesnt go out of bounds
   // Can happen when position is not 0 and dimensions are set to 100%
@@ -95,7 +98,6 @@ export const resolveContainer = (
     if (container.dimensions == null) {
       d = { w: tRef.dimensions.w, h: tRef.dimensions.h }
       // Reevaluate the position (which needs the dimensions)
-      d = resolvePaddings(container, d)
       p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
       tRef = resolveText(container, d, p, tStyle, uStyle)
     }
@@ -112,20 +114,12 @@ export const resolveContainer = (
     padding: container.padding,
     text: tRef ? tRef.text : null,
     textStyle: tStyle,
-  } satisfies ContainerReference
+  } satisfies RenderReference
 
   return sRef
 }
 
-const resolvePaddings = (container: Container, d: Dimensions<number>): Dimensions<number> => {
-  if (container.padding != null) {
-    d.w += container.padding.l + container.padding.r
-    d.h += container.padding.t + container.padding.b
-  }
-  return d
-}
-
-const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimensions<number> => {
+const resolveDimensions = (container: Container, parent: Dimensions<number>): Dimensions<number> => {
   let dRef = <Dimensions<number>>{}
   switch (true) {
     /**
@@ -133,10 +127,10 @@ const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimens
      *
      * Gets 0,0 dimensions as default.
      */
-    case stack.display === DisplayFlag.Absolute && stack.dimensions == null:
+    case container.display === DisplayFlag.Absolute && container.dimensions == null:
       // Otherwise print a warning that no dimensions are set
-      if (stack.text == null) {
-        console.warn(`Current stack is absolute but has no dimensions: ${stack.name} will not display`)
+      if (container.text == null) {
+        console.warn(`Current stack is absolute but has no dimensions: ${container.name} will not display`)
       }
       dRef = { w: 0, h: 0 }
       break
@@ -145,7 +139,7 @@ const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimens
      *
      * Inherits dimensions from parent
      */
-    case stack.display === DisplayFlag.Inherit && stack.dimensions == null:
+    case container.display === DisplayFlag.Inherit && container.dimensions == null:
       dRef = parent
       break
     /**
@@ -153,7 +147,7 @@ const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimens
      *
      * Expression get evaluated based on window dimensions.
      */
-    case stack.display === DisplayFlag.Absolute && stack.dimensions != null:
+    case container.display === DisplayFlag.Absolute && container.dimensions != null:
       if (_uGlobal.resolution == null) {
         throw new Error(`Game resolution not set (Use _uGlobal.resolution)`)
       }
@@ -161,22 +155,18 @@ const resolveDimensions = (stack: Container, parent: Dimensions<number>): Dimens
         w: _uGlobal.resolution.w,
         h: _uGlobal.resolution.h,
       }
-      dRef = evaluateDimensions(stack.dimensions!, wd)
-      // Resolve position/paddings to give children correct dimensions
-      // resolvePositionalDifferences(stack)
+      dRef = evaluateDimensions(container.dimensions!, wd)
       break
     /**
      * Display Inherit - Dimensions specified
      *
      * Expressions get avaluated based on parent.
      */
-    case stack.display === DisplayFlag.Inherit && stack.dimensions != null:
-      dRef = evaluateDimensions(stack.dimensions!, parent)
-      // Resolve position/paddings to give children correct dimensions
-      // resolvePositionalDifferences(stack)
+    case container.display === DisplayFlag.Inherit && container.dimensions != null:
+      dRef = evaluateDimensions(container.dimensions!, parent)
       break
     default:
-      throw new Error(`Something went terribly wrong with dimensions on: ${stack.name}`)
+      throw new Error(`Something went terribly wrong with dimensions on: ${container.name}`)
   }
   return dRef
 }
@@ -278,11 +268,11 @@ const resolveTextStyle = (uStyle: Style): TextStyle => {
 }
 
 const resolveFlex = (
-  parent: ContainerReference | RenderReference,
+  parent: RenderReference | RenderReference,
   flexParent: Container,
   children: Array<Container>
-): Array<ContainerReference> => {
-  const ref: Array<ContainerReference> = []
+): Array<RenderReference> => {
+  const ref: Array<RenderReference> = []
   const pRef = resolveContainer(flexParent, parent)
   ref.push(pRef)
 

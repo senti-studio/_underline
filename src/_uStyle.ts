@@ -13,7 +13,7 @@ export class Style {
   constructor(public readonly name: string) {}
 }
 
-export const getStyle = (name: string): Style => {
+export const getStyle = (name: string = '_default'): Style => {
   return _stack[name] ?? new Style('_default')
 }
 

@@ -1,4 +1,4 @@
-import { Container } from 'pixi.js'
+import * as PIXI from 'pixi.js'
 
 export enum TransformType {
   Width,
@@ -16,6 +16,17 @@ export enum DisplayFlag {
   FlexDynamic = 3 << 1,
 }
 
+export interface RenderReference {
+  name: string
+  container: PIXI.Graphics
+  display: DisplayFlag
+  dimensions: Dimensions<number>
+  position: Position<number>
+  border: Border | null
+  fill: string | null
+  text: PIXI.Text | null
+  textStyle: PIXI.TextStyle | null
+}
 export type Border = { width: number; color: string }
 export type Position<T> = {
   x: T
@@ -31,13 +42,6 @@ export type Area = {
   r: number
   t: number
   b: number
-}
-
-export type RenderReference = {
-  container: Container
-  position: Position<number>
-  dimensions: Dimensions<number>
-  paddings?: Area
 }
 
 export interface _uBase {

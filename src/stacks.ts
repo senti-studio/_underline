@@ -1,25 +1,12 @@
 import * as PIXI from 'pixi.js'
-import { Area, Border, Dimensions, DisplayFlag, Position } from './types'
+import { Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from './types'
 
 export type ContainerStack = Map<string, Container>
-export type ReferenceStack = Map<string, ContainerReference>
+export type ReferenceStack = Map<string, RenderReference>
 
 const _containerStack: ContainerStack = new Map()
-let _referenceStack: ReferenceStack = new Map()
+// let _referenceStack: ReferenceStack = new Map()
 let _currentContainer: Container | null = null
-
-export interface ContainerReference {
-  name: string
-  container: PIXI.Graphics
-  display: DisplayFlag
-  dimensions: Dimensions<number>
-  position: Position<number>
-  border: Border | null
-  padding: Area | null
-  fill: string | null
-  text: PIXI.Text | null
-  textStyle: PIXI.TextStyle | null
-}
 
 export class Container {
   public readonly container: PIXI.Graphics = new PIXI.Graphics()
@@ -101,10 +88,11 @@ export const push = (stack: Container): void => {
 export const find = (identifier: string): Container | null => {
   return _containerStack.get(identifier) ?? null
 }
-
+//TODO: Use reference with resuable
+/*
 export const addReference = (ref: ReferenceStack): void => {
   _referenceStack = ref
-}
+}*/
 
 export const pop = (): ContainerStack => {
   _currentContainer = null
