@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/guide
+      link: /guide/
     - theme: alt
       text: Why _underline?
       link: /guide/why

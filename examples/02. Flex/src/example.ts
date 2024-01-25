@@ -2,6 +2,7 @@ import { DisplayFlag, _u } from '@tinytales/_underline'
 
 export default function runExample() {
   flexCol()
+  flexRow()
 }
 
 const flexCol = () => {
