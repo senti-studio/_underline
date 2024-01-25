@@ -34,7 +34,7 @@ const row2 = () => {
   _u.begin('row2')
   _u.position(0, 250)
 
-  _u.begin('row2 > red')
+  _u.begin('row2 > red2')
   _u.fill('#FF0000')
   _u.dimension(150, 150)
 }
