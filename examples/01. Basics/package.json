@@ -13,7 +13,6 @@
     "vite": "^5.0.8"
   },
   "dependencies": {
-    "pixi.js": "^7.3.2",
-    "@tinytales/_underline": "^0.1"
+    "@tinytales/_underline": "^0.2"
   }
 }

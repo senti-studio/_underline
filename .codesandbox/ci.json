@@ -1,0 +1,5 @@
+{
+  "buildCommand": "codesandbox-ci",
+  "sandboxes": ["/examples/01. Basics"],
+  "node": "18"
+}
