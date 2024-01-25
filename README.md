@@ -22,25 +22,25 @@ npm install @tinytales/_underline
 ## Example
 
 ```typescript
-_u.begin("#main") // main
+_u.begin('main') // main
 _u.display(DisplayFlag.FlexRow)
 
-_u.begin("#left-area") // main -> left-area
+_u.begin('main > left-area') // main -> left-area
 _u.display(DisplayFlag.FlexFixed)
-_u.rect(25, "100%")
-_u.fill("#ddd")
+_u.rect(25, '100%')
+_u.fill('#ddd')
 _u.end()
 
-_u.begin("#content") // main -> fill center content
+_u.begin('main > content') // main -> fill center content
 _u.display(DisplayFlag.FlexDynamic)
-_u.rect("100%", "100%")
-_u.fill("#fff000")
+_u.rect('100%', '100%')
+_u.fill('#fff000')
 _u.end()
 
-_u.begin("#right-area") // main -> right-area
+_u.begin('main > right-area') // main -> right-area
 _u.display(DisplayFlag.FlexFixed)
-_u.rect(25, "100%")
-_u.fill("#ddd")
+_u.rect(25, '100%')
+_u.fill('#ddd')
 _u.end()
 
 _u.end()
