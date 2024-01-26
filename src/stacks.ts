@@ -66,40 +66,48 @@ export class Container {
   }
 }
 
-export const determineParent = (identifier: string): Array<string> | null => {
+let lastParent: string | null = null
+
+export function determineParent(identifier: string): Array<string> | null {
   identifier = identifier.replace(/\s/g, '') // Remove whitespace
-  // Parse identifier string and split into parts based on > character
-  const parts = identifier.split('>')
-  // If there is only one part, then the parent is null
-  // Which makes this the root container
-  if (parts.length === 1) {
-    return null
+
+  if (identifier.includes('>>')) {
+    // Assign to last parent
+    const id = identifier.replace(/>>/g, '')
+
+    if (lastParent == null) return null
+    return [lastParent, id]
+  } else if (identifier.includes('>')) {
+    // Assign to given parent
+    const parts = identifier.split('>')
+    // Otherwise, we know that index 0 is the parent and index 1 is the child
+    // If there are more > we gracefully ignore them
+    return [parts[0], parts[1]]
   }
-  // Otherwise, we know that index 0 is the parent and index 1 is the child
-  // If there are more > we gracefully ignore them
-  return [parts[0], parts[1]]
+
+  lastParent = identifier
+  return [identifier]
 }
 
-export const push = (stack: Container): void => {
-  _currentContainer = stack
-  _containerStack.set(stack.name, stack)
-}
+export const find = (identifier: string): Container | null => _containerStack.get(identifier) ?? null
 
-export const find = (identifier: string): Container | null => {
-  return _containerStack.get(identifier) ?? null
-}
 //TODO: Use reference with resuable
 /*
 export const addReference = (ref: ReferenceStack): void => {
   _referenceStack = ref
 }*/
 
-export const pop = (): ContainerStack => {
+export function push(stack: Container): void {
+  _currentContainer = stack
+  _containerStack.set(stack.name, stack)
+}
+
+export function pop(): ContainerStack {
   _currentContainer = null
   return _containerStack
 }
 
-export const ensureOpenStack = (): Container => {
+export function ensureOpenStack(): Container {
   if (_currentContainer == null) {
     throw new Error('No open stack. Did you forget to begin() ?')
   }

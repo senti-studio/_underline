@@ -5,7 +5,7 @@ import { _uGlobal } from './_uGlobal'
 import { Text, TextMetrics, TextStyle } from 'pixi.js'
 import { Container, ContainerStack, ReferenceStack } from './stacks'
 
-export const resolve = (stack: ContainerStack, parent: RenderReference): ReferenceStack => {
+export function resolve(stack: ContainerStack, parent: RenderReference): ReferenceStack {
   const ref = new Map()
   let flex = false
   let flexParent: Container | null = null
@@ -67,7 +67,7 @@ export const resolve = (stack: ContainerStack, parent: RenderReference): Referen
   return ref
 }
 
-export const resolveContainer = (container: Container, parent: RenderReference | RenderReference): RenderReference => {
+function resolveContainer(container: Container, parent: RenderReference): RenderReference {
   // Resolve expressions
   let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
   let p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
@@ -83,6 +83,18 @@ export const resolveContainer = (container: Container, parent: RenderReference |
     // Check the initial y position + resolved height
     if (container.position.y + d.h > parent.dimensions.h) {
       d.h = parent.dimensions.h - container.position.y
+    }
+  }
+
+  // Resolve paddings
+  if (parent.padding != null && container.display !== DisplayFlag.Absolute) {
+    p.x += parent.padding.l
+    if (p.x + d.w >= parent.dimensions.w) {
+      d.w = parent.dimensions.w - parent.padding.r
+    }
+    p.y += parent.padding.t
+    if (p.y + d.h >= parent.dimensions.h) {
+      d.h = parent.dimensions.h - parent.padding.b
     }
   }
 
@@ -117,7 +129,7 @@ export const resolveContainer = (container: Container, parent: RenderReference |
   } satisfies RenderReference
 }
 
-const resolveDimensions = (container: Container, parent: Dimensions<number>): Dimensions<number> => {
+function resolveDimensions(container: Container, parent: Dimensions<number>): Dimensions<number> {
   let dRef = <Dimensions<number>>{}
   switch (true) {
     /**
@@ -169,12 +181,12 @@ const resolveDimensions = (container: Container, parent: Dimensions<number>): Di
   return dRef
 }
 
-const resolvePositions = (
+function resolvePositions(
   stack: Container,
   stackD: Dimensions<number>,
   parentP: Position<number>,
   parentD: Dimensions<number>
-): Position<number> => {
+): Position<number> {
   let pRef = <Position<number>>{}
   switch (true) {
     /**
@@ -233,13 +245,13 @@ type TextReference = {
   dimensions: Dimensions<number>
 }
 
-export const resolveText = (
+export function resolveText(
   stack: Container,
   stackD: Dimensions<number>,
   stackP: Position<number>,
   style: TextStyle,
   uStyle: Style
-): TextReference => {
+): TextReference {
   // Create text object
   const t = new Text(stack.text!, style)
   t.name = stack.name + '_text'
@@ -261,7 +273,7 @@ export const resolveText = (
 }
 
 // Create pixi text style
-const resolveTextStyle = (uStyle: Style): TextStyle => {
+function resolveTextStyle(uStyle: Style): TextStyle {
   return new TextStyle({
     fontFamily: uStyle.font,
     fontSize: uStyle.size,
@@ -269,11 +281,11 @@ const resolveTextStyle = (uStyle: Style): TextStyle => {
   })
 }
 
-const resolveFlex = (
+function resolveFlex(
   parent: RenderReference | RenderReference,
   flexParent: Container,
   children: Array<Container>
-): Array<RenderReference> => {
+): Array<RenderReference> {
   const ref: Array<RenderReference> = []
   const pRef = resolveContainer(flexParent, parent)
   ref.push(pRef)

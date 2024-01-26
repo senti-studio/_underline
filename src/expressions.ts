@@ -1,9 +1,9 @@
 import { Dimensions, Position, TransformType } from './types'
 
-export const evaluateDimensions = (
+export function evaluateDimensions(
   ref: Dimensions<number | string>,
   parent: Dimensions<number | string>
-): Dimensions<number> => {
+): Dimensions<number> {
   if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent.w}, ${parent.h}`)
   }
@@ -12,11 +12,12 @@ export const evaluateDimensions = (
   const h = expToNumber(ref.h, parent.h as number, TransformType.Height)
   return { w, h }
 }
-export const evaluatePosition = (
+
+export function evaluatePosition(
   refP: Position<number | string>,
   refD: Dimensions<number | string>,
   parent: Dimensions<number | string>
-): Position<number> => {
+): Position<number> {
   if (typeof parent.w !== 'number' || typeof parent.h !== 'number') {
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent.w}, ${parent.h}`)
   }
@@ -29,12 +30,12 @@ export const evaluatePosition = (
   return { x: x, y: y }
 }
 
-const expToNumber = (exp: number | string, p: number, type: TransformType, s?: number): number => {
+function expToNumber(exp: number | string, p: number, type: TransformType, s?: number): number {
   if (typeof exp === 'number') return exp
   return evaluateExpression(exp, p, type, s)
 }
 
-const evaluateExpression = (exp: string, p: number, type: TransformType, refDimension?: number) => {
+function evaluateExpression(exp: string, p: number, type: TransformType, refDimension?: number) {
   let baseValue = 0
   let refValue = 0
   switch (type) {

@@ -22,6 +22,7 @@ export interface RenderReference {
   display: DisplayFlag
   dimensions: Dimensions<number>
   position: Position<number>
+  padding: Area | null
   border: Border | null
   fill: string | null
   text: PIXI.Text | null
