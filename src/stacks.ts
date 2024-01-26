@@ -68,15 +68,21 @@ export class Container {
 
 let lastParent: string | null = null
 
-export function determineParent(identifier: string): Array<string> | null {
+export function getNameIdentifiers(identifier: string): Array<string> | null {
   identifier = identifier.replace(/\s/g, '') // Remove whitespace
 
   if (identifier.includes('>>')) {
     // Assign to last parent
-    const id = identifier.replace(/>>/g, '')
+    const currentParent = lastParent
+    let id = identifier.replace(/>>/g, '') // Remove >>
+    if (id.includes('!')) {
+      id = id.replace(/!/g, '') // Remove !
+      lastParent = id
+    }
 
-    if (lastParent == null) return null
-    return [lastParent, id]
+    if (currentParent == null) return null
+
+    return [currentParent, id]
   } else if (identifier.includes('>')) {
     // Assign to given parent
     const parts = identifier.split('>')
@@ -86,7 +92,7 @@ export function determineParent(identifier: string): Array<string> | null {
   }
 
   lastParent = identifier
-  return [identifier]
+  return null
 }
 
 export const find = (identifier: string): Container | null => _containerStack.get(identifier) ?? null

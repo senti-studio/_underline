@@ -89,12 +89,23 @@ function resolveContainer(container: Container, parent: RenderReference): Render
   // Resolve paddings
   if (parent.padding != null && container.display !== DisplayFlag.Absolute) {
     p.x += parent.padding.l
-    if (p.x + d.w >= parent.dimensions.w) {
-      d.w = parent.dimensions.w - parent.padding.r
+
+    if (p.x + d.w >= parent.dimensions.w - parent.padding.r) {
+      d.w = parent.dimensions.w - parent.padding.r - parent.padding.l
+      // If the container has a fixed position value for x
+      // We need to subtract it too
+      if (container.position != null && typeof container.position.x === 'number') {
+        d.w -= container.position.x
+      }
     }
     p.y += parent.padding.t
-    if (p.y + d.h >= parent.dimensions.h) {
-      d.h = parent.dimensions.h - parent.padding.b
+    if (p.y + d.h >= parent.dimensions.h - parent.padding.b) {
+      d.h = parent.dimensions.h - parent.padding.b - parent.padding.t
+      // If the container has a fixed position value for y
+      // We need to subtract it too
+      if (container.position != null && typeof container.position.y === 'number') {
+        d.h -= container.position.y
+      }
     }
   }
 
@@ -115,6 +126,8 @@ function resolveContainer(container: Container, parent: RenderReference): Render
     }
   }
 
+  console.log('name', container.name)
+  console.log('d', d)
   return {
     name: container.name,
     container: container.container,
@@ -123,7 +136,7 @@ function resolveContainer(container: Container, parent: RenderReference): Render
     position: p,
     fill: container.fill,
     border: container.border,
-    // padding: container.padding,
+    padding: container.padding,
     text: tRef ? tRef.text : null,
     textStyle: tStyle,
   } satisfies RenderReference

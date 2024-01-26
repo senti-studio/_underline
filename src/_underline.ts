@@ -65,7 +65,8 @@ _u.renderTo = (reference: RenderReference): void => {
 }
 
 _u.begin = (identifier: string): void => {
-  const idParts = Stack.determineParent(identifier)
+  const idParts = Stack.getNameIdentifiers(identifier)
+  console.log(idParts)
   // idParts can only be null or length 2
   if (idParts == null) {
     // Push main container to stack
@@ -144,11 +145,10 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
   }
 
   current.padding = padding
+  console.log('added padding to', current.name)
 }
 
 const draw = (stack: Stack.ContainerStack, stackRef: Stack.ReferenceStack, parent: RenderReference): void => {
-  console.log('stack', stack)
-  console.log('stackRef', stackRef)
   stack.forEach((c: Stack.Container) => drawContainer(c, stackRef, parent))
 }
 
