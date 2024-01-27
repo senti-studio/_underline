@@ -126,8 +126,6 @@ function resolveContainer(container: Container, parent: RenderReference): Render
     }
   }
 
-  console.log('name', container.name)
-  console.log('d', d)
   return {
     name: container.name,
     container: container.container,

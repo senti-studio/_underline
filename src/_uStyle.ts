@@ -18,10 +18,30 @@ export const getStyle = (name: string = '_default'): Style => {
 }
 
 export interface _underlineStyle extends _uBase {
+  /**
+   * Name of the font asset.
+   * @param name - Font name
+   */
   font(name: string): void
+  /**
+   * Size of the font.
+   * @param size - Font size
+   */
   size(size: number): void
+  /**
+   * Color of the text
+   * @param rgb - Color in hex format
+   */
   color(rgb: string): void
+  /**
+   * Position of the font.
+   * @param xy - Text position inside a shape.
+   */
   position(xy: string | number): void
+  /**
+   * @param x - X Position
+   * @param y - Y Position
+   */
   position(x: string | number, y: string | number): void
 }
 
@@ -58,7 +78,7 @@ _uStyle.position = (x: number | string, y?: number | string): void => {
   currentStack.position = <Position<number | string>>{ x: x, y: y ?? x }
 }
 
-const ensureOpenStack = (): Style => {
+function ensureOpenStack(): Style {
   if (_currentStack == null) {
     throw new Error('No open stack. Did you forget to begin() ?')
   }

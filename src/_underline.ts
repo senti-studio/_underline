@@ -42,9 +42,19 @@ export interface _underline extends _uBase {
    * @param y - Position y
    */
   position(x: number | string, y: number | string): void
-
+  /**
+   * Adds text to the shape.
+   * @param text - Display text
+   * @param style - _uStyle identifier
+   */
   text(text: string, style?: string): void
-
+  /**
+   * Adds padding to the shape.
+   * @param t - Top padding
+   * @param r - Right padding
+   * @param b - Bottom padding
+   * @param l - Left padding
+   */
   padding(t: number, r: number, b: number, l: number): void
   padding(tb: number, rl: number): void
   padding(all: number): void
@@ -145,14 +155,13 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
   }
 
   current.padding = padding
-  console.log('added padding to', current.name)
 }
 
-const draw = (stack: Stack.ContainerStack, stackRef: Stack.ReferenceStack, parent: RenderReference): void => {
+function draw(stack: Stack.ContainerStack, stackRef: Stack.ReferenceStack, parent: RenderReference): void {
   stack.forEach((c: Stack.Container) => drawContainer(c, stackRef, parent))
 }
 
-const drawContainer = (current: Stack.Container, stack: Stack.ReferenceStack, parent: RenderReference): void => {
+function drawContainer(current: Stack.Container, stack: Stack.ReferenceStack, parent: RenderReference): void {
   const c = current.container
   const cRef = stack.get(current.name)!
   // Begin fill
