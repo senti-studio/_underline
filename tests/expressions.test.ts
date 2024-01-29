@@ -1,21 +1,6 @@
-import { describe, expect, test } from 'vitest'
-import { resolve } from '../src/resolver'
-import { Border, Dimensions, DisplayFlag, Position, RenderReference } from '../src/types'
-import * as PIXI from 'pixi.js'
-import { ContainerStack, Container } from '../src/stacks'
-
-describe('evaluateExpression', () => {
-  describe('success cases', () => {
-    test('should resolve center', () => {})
-    test('should resolve left', () => {})
-    test('should resolve right', () => {})
-    test('should resolve 50%', () => {})
-    test('should resolve 100%', () => {})
-  })
-  describe('failure cases', () => {
-    test('should resolve to 0 in bad expression', () => {})
-  })
-})
+import { describe, expect, test, vi } from 'vitest'
+import * as Expressions from '../src/expressions'
+import { Border, Dimensions, DisplayFlag, Position, RenderReference, TransformType } from '../src/types'
 
 describe('expToNumber', () => {
   describe('success cases', () => {
@@ -26,7 +11,31 @@ describe('expToNumber', () => {
 
 describe('evaluatePosition', () => {
   describe('success cases', () => {
-    test('should resolve position', () => {})
+    const parent = <Dimensions<number>>{ w: 100, h: 100 }
+    const refD = <Dimensions<number>>{ w: 50, h: 50 }
+    const successProiver = () => [
+      {
+        name: 'resolve center',
+        refD: refD,
+        parent: parent,
+        refP: <Position<string>>{ x: 'center', y: 'center' },
+        result: <Position<number>>{ x: 25, y: 25 },
+      },
+      {
+        name: 'resolve right',
+        refD: refD,
+        parent: parent,
+        refP: <Position<string>>{ x: 'right', y: 'right' },
+        result: <Position<number>>{ x: 50, y: 50 },
+      },
+    ]
+
+    test.each(successProiver())('$name', (provider) => {
+      //prettier-ignore
+      expect(Expressions 
+        .evaluatePosition(provider.refP, provider.refD, provider.parent))
+        .toStrictEqual(provider.result)
+    })
   })
   describe('failure cases', () => {
     test('should error on unresolved parent dimensions', () => {})
@@ -36,6 +45,8 @@ describe('evaluatePosition', () => {
 
 describe('evaluateDimensions', () => {
   describe('success cases', () => {
+    test('should resolve 50%', () => {})
+    test('should resolve 100%', () => {})
     test('should resolve dimensions', () => {})
   })
   describe('failure cases', () => {
