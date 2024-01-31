@@ -5,7 +5,7 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     coverage: {
       enabled: true,
-      reportsDirectory: './testui/coverage',
+      reportsDirectory: './html/coverage',
       include: ['src'],
       thresholds: {
         autoUpdate: true,

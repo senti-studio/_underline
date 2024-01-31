@@ -12,7 +12,7 @@ node_modules
 dist
 dist-ssr
 *.local
-testui
+html
 TODO.md
 
 # Editor directories and files

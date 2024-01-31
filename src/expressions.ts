@@ -22,7 +22,7 @@ export function evaluatePosition(
     throw new Error(`Parent stack has unresolved/invalid dimensions: ${parent.w}, ${parent.h}`)
   }
   if (typeof refD.w !== 'number' || typeof refD.h !== 'number') {
-    throw new Error(`Current stack has unresolved/invalid dimensions: ${refD}`)
+    throw new Error(`Current stack has unresolved/invalid dimensions: ${refD.w}, ${refD.h}`)
   }
   let x = expToNumber(refP.x, parent.w, TransformType.X, refD.w as number)
   let y = expToNumber(refP.y, parent.h, TransformType.Y, refD.h as number)
