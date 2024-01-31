@@ -76,7 +76,6 @@ _u.renderTo = (reference: RenderReference): void => {
 
 _u.begin = (identifier: string): void => {
   const idParts = Stack.getNameIdentifiers(identifier)
-  console.log(idParts)
   // idParts can only be null or length 2
   if (idParts == null) {
     // Push main container to stack
@@ -133,7 +132,7 @@ _u.text = (text: string, style?: string): void => {
   current.textStyle = style ?? ''
 }
 
-_u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
+_u.padding = (p1: number, p2?: number | null, p3?: number | null, p4?: number | null): void => {
   const current = Stack.ensureOpenStack()
 
   let padding = <Area>{}
@@ -141,8 +140,8 @@ _u.padding = (p1: number, p2?: number, p3?: number, p4?: number): void => {
     padding.t = p1
     padding.r = p2 as number
     padding.b = p3 as number
-    padding.l = p3 as number
-  } else if (p2 != null && p3 == null && p4 == null) {
+    padding.l = p4 as number
+  } else if (p2 != null) {
     padding.t = p1
     padding.r = p2 as number
     padding.b = p1
