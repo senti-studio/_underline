@@ -65,7 +65,11 @@ export const _u: _underline = <_underline>{}
 _u.renderTo = (reference: RenderReference): void => {
   // Resolve stack
   const stack = Stack.pop()
+  if (stack.size === 0) return
+
   const resolvedStack = resolve(stack, reference)
+  if (resolvedStack.size === 0) return
+
   // Keep reference
   //Stack.addReference(resolvedStack)
   // Draw to screen

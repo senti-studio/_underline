@@ -1,31 +1,58 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import * as U from '../src/_underline'
 import * as Stack from '../src/stacks'
-import { DisplayFlag } from '../src/types'
+import * as R from '../src/resolver'
+import { DisplayFlag, RenderReference } from '../src/types'
 
-test('renderTo', () => {})
+test('renderTo', () => {
+  const pop = vi.spyOn(Stack, 'pop')
+  const resolve = vi.spyOn(R, 'resolve')
+
+  U._u.renderTo(<any>{})
+
+  expect(pop).toHaveBeenCalledOnce()
+  expect(pop).toReturnWith(new Map())
+  expect(resolve).toHaveBeenCalledOnce()
+  expect(resolve).toReturnWith(new Map())
+})
 
 describe('begin', () => {
-  //TODO: Mock stack getNameIdentifiers
+  const stackMock = vi.fn().mockImplementation(Stack.getNameIdentifiers)
   const successProvider = () => [
     {
       name: 'single id',
       identifier: 'id',
+      stackResult: null,
       result: new Stack.Container('id'),
     },
     {
-      name: '>> id',
-      identifier: '>> id',
-      result: new Stack.Container('id'),
+      name: '>> id2',
+      identifier: '>> id2',
+      stackResult: ['id', 'id2'],
+      result: new Stack.Container('id2'),
+    },
+    {
+      name: 'id > id2',
+      identifier: 'id > id2',
+      stackResult: ['id', 'id2'],
+      result: new Stack.Container('id2'),
     },
   ]
   test.each(successProvider())('$name', (provider) => {
+    expect(stackMock(provider.identifier)).toStrictEqual(provider.stackResult)
+
+    const pushSpy = vi.spyOn(Stack, 'push')
+
     U._u.begin(provider.identifier)
+    expect(pushSpy).toHaveBeenCalledOnce()
+
     const current = Stack.ensureOpenStack()
     expect(current.name).toBe(provider.result.name)
   })
 
-  test('error: not found', () => {})
+  test('error: not found', () => {
+    expect(() => U._u.begin('unknownParent > id')).toThrowError('Parent container unknownParent not found')
+  })
 })
 
 test('dimension', () => {
