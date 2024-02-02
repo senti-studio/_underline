@@ -1,73 +1,113 @@
-import { describe, expect, it, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
 import * as U from '../src/_underline'
-// import * as Stack from '../src/stacks'
-import * as R from '../src/resolver'
+import { pop, Container, getNameIdentifiers, ensureOpenStack, find } from '../src/stacks'
+import { resolve } from '../src/resolver'
 import { DisplayFlag, RenderReference } from '../src/types'
 
-vi.mock('../src/stacks')
+vi.mock('../src/stacks.ts', () => {
+  return {
+    pop: vi.fn(),
+    push: vi.fn(),
+    find: vi.fn(),
+    Container: vi.fn(),
+    getNameIdentifiers: vi.fn(),
+    ensureOpenStack: vi.fn(),
+  }
+})
+vi.mock('../src/resolver.ts', () => {
+  return { resolve: vi.fn() }
+})
 
-//TODO: Test all render possibilites
 describe('render', () => {
-  it('renderTo', async () => {
-    // // const pop = vi.spyOn(Stack, 'pop')
-    // const resolve = vi.spyOn(R, 'resolve')
-    const stack = await import('../src/stacks')
-    stack.pop = vi.fn().mockImplementation(() => new Map())
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+  describe('success cases', () => {
+    //TODO: Test all render possibilites
+    test('should render', () => {
+      expect(true).toBe(true)
+    })
+  })
+  describe('failure cases', () => {
+    test('returns on empty stacks', async () => {
+      vi.mocked(pop).mockReturnValue(new Map())
 
-    U._u.renderTo(<any>{})
+      U._u.renderTo(<any>{})
 
-    // expect(pop).toHaveBeenCalledOnce()
-    // // expect(pop).toReturnWith(new Map())
-    // expect(resolve).toHaveBeenCalledTimes(0)
+      expect(pop).toHaveBeenCalledOnce()
+      expect(pop).toReturnWith(new Map())
+      expect(resolve).toHaveBeenCalledTimes(0)
+    })
+    test('returns on empty resolve stack', async () => {
+      const stack = new Map([['id', new Container('id')]])
+      vi.mocked(pop).mockReturnValue(stack)
+      vi.mocked(resolve).mockReturnValue(new Map())
+
+      U._u.renderTo(<any>{})
+
+      expect(pop).toHaveBeenCalledOnce()
+      expect(pop).toReturnWith(stack)
+      expect(resolve).toHaveBeenCalledOnce()
+      expect(resolve).toReturnWith(new Map())
+    })
   })
 })
-/*
+
 describe('begin', () => {
-  const stackMock = vi.fn().mockImplementation(Stack.getNameIdentifiers)
-  const successProvider = () => [
-    {
-      name: 'single id',
-      identifier: 'id',
-      stackResult: null,
-      result: new Stack.Container('id'),
-    },
-    {
-      name: '>> id2',
-      identifier: '>> id2',
-      stackResult: ['id', 'id2'],
-      result: new Stack.Container('id2'),
-    },
-    {
-      name: 'id > id2',
-      identifier: 'id > id2',
-      stackResult: ['id', 'id2'],
-      result: new Stack.Container('id2'),
-    },
-  ]
-  test.each(successProvider())('$name', (provider) => {
-    expect(stackMock(provider.identifier)).toStrictEqual(provider.stackResult)
-
-    const pushSpy = vi.spyOn(Stack, 'push')
-
-    U._u.begin(provider.identifier)
-    expect(pushSpy).toHaveBeenCalledOnce()
-
-    const current = Stack.ensureOpenStack()
-    expect(current.name).toBe(provider.result.name)
+  afterEach(() => {
+    vi.clearAllMocks()
   })
 
-  test('error: not found', () => {
-    expect(() => U._u.begin('unknownParent > id')).toThrowError('Parent container unknownParent not found')
+  describe('success cases', () => {
+    const successProvider = () => [
+      {
+        name: 'single id',
+        identifier: 'id',
+        idParts: null,
+        find: null,
+      },
+      {
+        name: 'id > id2',
+        identifier: 'id > id2',
+        idParts: ['id', 'id2'],
+        find: new Container('id'),
+      },
+    ]
+    test.each(successProvider())('$name', (provider) => {
+      vi.mocked(getNameIdentifiers).mockReturnValue(provider.idParts)
+      vi.mocked(find).mockReturnValue(provider.find)
+
+      U._u.begin(provider.identifier)
+
+      expect(getNameIdentifiers).toHaveBeenCalledOnce()
+      if (provider.idParts != null) {
+        expect(find).toHaveBeenCalledOnce()
+      }
+    })
   })
+
+  // describe('error cases', () => {
+  //   test('not found', () => {
+  //     vi.mocked(getNameIdentifiers).mockReturnValue(['unknownParent', 'id'])
+  //     vi.mocked(find).mockReturnValue(null)
+
+  //     // prettier-ignore
+  //     expect(() => U._u
+  //     .begin('unknownParent > id'))
+  //     .toThrowError('Parent container unknownParent not found')
+  //   })
+  // })
 })
 
 test('dimension', () => {
-  U._u.begin('test')
+  const current = new Container('id')
+  vi.mocked(ensureOpenStack).mockReturnValue(current)
+  expect(current.dimensions).toBe(undefined)
+
   U._u.dimension(1, 2)
-  const current = Stack.ensureOpenStack()
   expect(current.dimensions).toStrictEqual({ w: 1, h: 2 })
 })
-
+/*
 test('fill', () => {
   U._u.begin('test')
   U._u.fill('red')

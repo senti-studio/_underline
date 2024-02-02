@@ -71,7 +71,7 @@ _u.renderTo = (reference: RenderReference): void => {
   if (resolvedStack.size === 0) return
 
   // Keep reference
-  //Stack.addReference(resolvedStack)
+  // Stack.addReference(resolvedStack)
   // Draw to screen
   draw(stack, resolvedStack, reference)
   // Reset stack
