@@ -1,26 +1,43 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+import * as Stack from '../src/stacks'
 
-describe('ensureOpenStack', () => {
-  test('should error if no stack is open', () => {})
-  test('should return the current stack', () => {})
-})
+const container = new Stack.Container('test')
 
-describe('push', () => {
-  test('should push a new stack', () => {})
-})
+describe('push & pop & find', () => {
+  test('should push a new stack', () => {
+    Stack.push(container)
+  })
 
-describe('pop', () => {
-  test('should pop the current stack', () => {})
-})
+  test('should have open stack', () => {
+    expect(Stack.ensureOpenStack()).toStrictEqual(container)
+  })
 
-describe('find', () => {
-  test('should find a stack by name', () => {})
-  test('should return null if no stack is found', () => {})
+  test('should find test container', () => {
+    const found = Stack.find('test')
+    expect(found).toStrictEqual(container)
+  })
+
+  test('should pop stack with test container', () => {
+    const pop = Stack.pop()
+    expect(pop.get('test')).toStrictEqual(container)
+  })
+
+  test('should throw error on empty stack', () => {
+    expect(() => Stack.ensureOpenStack()).toThrowError('No open stack. Did you forget to begin() ?')
+  })
+
+  test('should not find test container', () => {
+    const notFound = Stack.find('test')
+    expect(notFound).toBeNull()
+  })
 })
 
 describe('getNameIdentifiers', () => {
   describe('success cases', () => {
-    test('should return parent and child', () => {})
+    test('should return parent and child', () => {
+      const result = Stack.getNameIdentifiers('parent > child')
+      expect(result).toStrictEqual(['parent', 'child'])
+    })
     test('should return parent and child with !', () => {})
   })
   describe('failure cases', () => {

@@ -1,13 +1,13 @@
 {
   "name": "@tinytales/_underline",
-  "version": "0.2.0",
-  "description": "Tiny gui for pixijs inspired by DearImGui and CSS",
+  "version": "0.3.0",
+  "description": "A GUI library for humans, inspired by DearImGui and CSS",
   "author": "Cristian Cornea",
   "email": "tinytales@mailbox.org",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tinytales/_underline.git"
+    "url": "git+https://github.com/tiny-tales/_underline.git"
   },
   "keywords": [
     "pixijs",
@@ -47,6 +47,7 @@
     "jsdom": "^23.2.0",
     "prettier": "3.1.1",
     "rewire": "^7.0.0",
+    "tslib": "^2.6.2",
     "tsup": "^8.0.1",
     "typescript": "^5.2.2",
     "vite": "^5.0.8",

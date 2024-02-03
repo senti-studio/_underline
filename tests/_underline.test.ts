@@ -86,36 +86,42 @@ describe('begin', () => {
     })
   })
 
-  // describe('error cases', () => {
-  //   test('not found', () => {
-  //     vi.mocked(getNameIdentifiers).mockReturnValue(['unknownParent', 'id'])
-  //     vi.mocked(find).mockReturnValue(null)
+  describe('error cases', () => {
+    test('not found', () => {
+      vi.mocked(getNameIdentifiers).mockReturnValue(['unknownParent', 'id'])
+      vi.mocked(find).mockReturnValue(null)
 
-  //     // prettier-ignore
-  //     expect(() => U._u
-  //     .begin('unknownParent > id'))
-  //     .toThrowError('Parent container unknownParent not found')
-  //   })
-  // })
+      // prettier-ignore
+      expect(() => U._u
+      .begin('unknownParent > id'))
+      .toThrowError('Parent container unknownParent not found')
+    })
+  })
 })
 
+const current = new Container('id')
+
 test('dimension', () => {
-  const current = new Container('id')
   vi.mocked(ensureOpenStack).mockReturnValue(current)
   expect(current.dimensions).toBe(undefined)
 
   U._u.dimension(1, 2)
   expect(current.dimensions).toStrictEqual({ w: 1, h: 2 })
 })
-/*
+
 test('fill', () => {
-  U._u.begin('test')
+  vi.mocked(ensureOpenStack).mockReturnValue(current)
+  expect(current.fill).toBe(undefined)
+
   U._u.fill('red')
-  const current = Stack.ensureOpenStack()
-  expect(current.fill).toBe('red')
+  expect(current.fill).toStrictEqual('red')
 })
 
 describe('display', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   const successProvider = () => [
     {
       name: 'should set inherit',
@@ -155,47 +161,52 @@ describe('display', () => {
     },
   ]
   test.each(successProvider())('$name', (provider) => {
-    U._u.begin('test')
-    U._u.display(provider.types)
-    const current = Stack.ensureOpenStack()
+    current.display = DisplayFlag.Inherit
+    current.flex = null
+    vi.mocked(ensureOpenStack).mockReturnValue(current)
+    expect(current.flex).toBe(null)
 
-    expect(current.display).toBe(provider.displayResult)
-    expect(current.flex).toBe(provider.flexResult)
+    U._u.display(provider.types)
+
+    expect(current.display).toStrictEqual(provider.displayResult)
+    expect(current.flex).toStrictEqual(provider.flexResult)
   })
 })
 
 test('border', () => {
-  U._u.begin('test')
+  vi.mocked(ensureOpenStack).mockReturnValue(current)
+  expect(current.border).toBe(undefined)
+
   U._u.border(1, 'red')
-  const current = Stack.ensureOpenStack()
   expect(current.border).toStrictEqual({ width: 1, color: 'red' })
 })
 
 test('position', () => {
-  U._u.begin('test')
+  vi.mocked(ensureOpenStack).mockReturnValue(current)
+  expect(current.position).toBe(undefined)
+
   U._u.position(1, 2)
-  const current = Stack.ensureOpenStack()
   expect(current.position).toStrictEqual({ x: 1, y: 2 })
 })
 
 describe('text', () => {
-  test('should set text', () => {
-    U._u.begin('test')
-    U._u.text('some text')
-    const current = Stack.ensureOpenStack()
-    expect(current.text).toBe('some text')
-    expect(current.textStyle).toBe('')
-  })
-  test('should set style', () => {
-    U._u.begin('test')
+  test('should set text & style', () => {
+    vi.mocked(ensureOpenStack).mockReturnValue(current)
+    expect(current.text).toBe(undefined)
+    expect(current.textStyle).toBe(undefined)
+
     U._u.text('some text', 'style class name')
-    const current = Stack.ensureOpenStack()
+
     expect(current.text).toBe('some text')
     expect(current.textStyle).toBe('style class name')
   })
 })
 
 describe('padding', () => {
+  afterEach(() => {
+    vi.clearAllMocks()
+  })
+
   const successProvider = () => [
     {
       name: 'should set all',
@@ -231,10 +242,11 @@ describe('padding', () => {
     },
   ]
   test.each(successProvider())('$name', (provider) => {
-    U._u.begin('test')
+    const current = new Container('id')
+    vi.mocked(ensureOpenStack).mockReturnValue(current)
+    expect(current.padding).toBe(undefined)
+
     U._u.padding(provider.p1, provider.p2, provider.p3, provider.p4)
-    const current = Stack.ensureOpenStack()
     expect(current.padding).toStrictEqual(provider.result)
   })
 })
-*/

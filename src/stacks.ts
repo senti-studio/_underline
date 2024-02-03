@@ -4,7 +4,7 @@ import { Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from
 export type ContainerStack = Map<string, Container>
 export type ReferenceStack = Map<string, RenderReference>
 
-const _containerStack: ContainerStack = new Map()
+let _containerStack: ContainerStack = new Map()
 // let _referenceStack: ReferenceStack = new Map()
 let _currentContainer: Container | null = null
 
@@ -103,14 +103,18 @@ export const addReference = (ref: ReferenceStack): void => {
   _referenceStack = ref
 }*/
 
-export function push(stack: Container): void {
-  _currentContainer = stack
-  _containerStack.set(stack.name, stack)
+export function push(container: Container): void {
+  _currentContainer = container
+  _containerStack.set(container.name, container)
 }
 
 export function pop(): ContainerStack {
+  const current = _containerStack
+
+  _containerStack = new Map()
   _currentContainer = null
-  return _containerStack
+
+  return current
 }
 
 export function ensureOpenStack(): Container {
