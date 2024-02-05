@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
 import * as U from '../src/_underline'
 import { pop, Container, getNameIdentifiers, ensureOpenStack, find } from '../src/stacks'
+import * as Stacks from '../src/stacks'
 import { resolve } from '../src/resolver'
 import { DisplayFlag, RenderReference } from '../src/types'
 
@@ -75,6 +76,7 @@ describe('begin', () => {
     ]
     test.each(successProvider())('$name', (provider) => {
       vi.mocked(getNameIdentifiers).mockReturnValue(provider.idParts)
+      if (provider.find != null) vi.mocked(provider.find).add = vi.fn()
       vi.mocked(find).mockReturnValue(provider.find)
 
       U._u.begin(provider.identifier)

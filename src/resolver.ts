@@ -7,62 +7,17 @@ import { Container, ContainerStack, ReferenceStack } from './stacks'
 
 export function resolve(stack: ContainerStack, parent: RenderReference): ReferenceStack {
   const ref = new Map()
-  let flex = false
-  let flexParent: Container | null = null
-  let flexChildren: Array<Container> = []
+  // Resolve flex containers first
   stack.forEach((c: Container) => {
-    // Whenever we encounter absiolute or inherit, we stop the flex process
-    flex = c.isFlex()
-    // If we are currently in a flex process, we push the child to the flex children
-    if (flex) {
-      if (c.flex == DisplayFlag.FlexRow || c.flex == DisplayFlag.FlexCol) {
-        flexParent = c
-      } else {
-        flexChildren.push(c)
-      }
-    } else {
-      // If we are not in a flex, we need to resolve all previous flex children
-      // Before we can resolve the current container
-      if (flexChildren.length > 0) {
-        const flexRef = resolveFlex(ref.get(c.parent?.name) ?? parent, flexParent!, flexChildren)
-        flexRef.forEach((c: RenderReference) => {
-          // Push to same ref to keep the stack flat and in order
-          ref.set(c.name, c)
-        })
-        flexChildren = []
-        flexParent = null
-      }
-      // Resolve current container
-      const cRef = resolveContainer(c, ref.get(c.parent?.name) ?? parent)
-      ref.set(c.name, cRef)
-      // There were no previous flex children, but this one could start a new flex
-      // If display is FlexRow or FlexCol
-      if (c.flex != null) {
-        flex = true
-        flexParent = c
-      }
+    if (c.flex === DisplayFlag.FlexCol || c.flex === DisplayFlag.FlexRow) {
+      resolveFlex(parent, c, c.children)
     }
   })
-
-  // Whenever we leave the loop with a flex process open, we need to resolve
-  // before returning
-  //TODO: Refactor to nicer code (duplicate from above)
-  if (flexChildren.length > 0) {
-    const flexRef = resolveFlex(ref.get(flexParent!.parent?.name) ?? parent, flexParent!, flexChildren)
-    flexRef.forEach((c: RenderReference) => {
-      // Push to same ref to keep the stack flat and in order
-      ref.set(c.name, c)
-    })
-    flexChildren = []
-    flexParent = null
-  }
-  // Resolve flex parent without children
-  // We do this to remain fault tolerant
-  // (even if flex doesnt make sence on this container)
-  if (flexParent != null) {
-    const pRef = resolveContainer(flexParent, ref.get((flexParent as Container).parent?.name) ?? parent)
-    ref.set(pRef.name, pRef)
-  }
+  // Then resolve all containers
+  stack.forEach((c: Container) => {
+    const cRes = resolveContainer(c, parent)
+    ref.set(cRes.name, cRes)
+  })
 
   return ref
 }
@@ -295,7 +250,7 @@ function resolveFlex(
   parent: RenderReference | RenderReference,
   flexParent: Container,
   children: Array<Container>
-): Array<RenderReference> {
+): void {
   const ref: Array<RenderReference> = []
   const pRef = resolveContainer(flexParent, parent)
   ref.push(pRef)
@@ -355,8 +310,7 @@ function resolveFlex(
     c.dimensions = cD
     c.position = cP
 
-    const cRef = resolveContainer(c, pRef)
-    ref.push(cRef)
+    // const cRef = resolveContainer(c, pRef)
+    // ref.push(cRef)
   })
-  return ref
 }

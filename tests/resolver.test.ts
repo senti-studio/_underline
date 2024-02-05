@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { resolve } from '../src/resolver'
+import { resolve, resolveNEW } from '../src/resolver'
 import { Border, Dimensions, DisplayFlag, Position, RenderReference } from '../src/types'
 import { Container } from '../src/stacks'
 import { getStyle } from '../src/_uStyle'
@@ -73,19 +73,26 @@ describe('resolve', () => {
   }
   //prettier-ignore
   const main = new Container('main')
-  const child1 = new Container('child1', main)
+  const child1 = new Container('child1')
   child1.display = DisplayFlag.Absolute
   child1.dimensions = <Dimensions<number>>{ w: 25, h: 25 }
   child1.position = <Position<number>>{ x: 10, y: 15 }
-  const flex = new Container('flex1', main)
+  const flex = new Container('flex1')
   flex.flex = DisplayFlag.FlexRow
-  const flexchild1 = new Container('flexchild1', flex)
+  const flexchild1 = new Container('flexchild1')
   flexchild1.flex = DisplayFlag.FlexFixed
   flexchild1.dimensions = <Dimensions<number>>{ w: 100, h: 100 }
-  const flexchild2 = new Container('flexchild2', flex)
+  const flexchild2 = new Container('flexchild2')
   flexchild2.flex = DisplayFlag.FlexDynamic
-  const flexchild3 = new Container('flexchild3', flex)
+  const flexchild3 = new Container('flexchild3')
   flexchild3.flex = DisplayFlag.FlexDynamic
+
+  flex.add(flexchild1)
+  flex.add(flexchild2)
+  flex.add(flexchild3)
+  main.add(child1)
+  main.add(flex)
+
   const stack = new Map([
     ['main', main],
     ['child1', child1],

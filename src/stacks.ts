@@ -20,10 +20,7 @@ export class Container {
   public text: string | null = null
   public textStyle: string | null = null
 
-  constructor(
-    public readonly name: string,
-    public readonly parent?: Container
-  ) {
+  constructor(public readonly name: string) {
     this.container.name = name
   }
 
@@ -31,7 +28,6 @@ export class Container {
   get children(): Array<Container> {
     return this._children
   }
-
   public add(child: Container): void {
     this._children.push(child)
   }

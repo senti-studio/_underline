@@ -88,7 +88,9 @@ _u.begin = (identifier: string): void => {
     const parent = Stack.find(idParts[0])
     if (parent == null) throw new Error(`Parent container ${idParts[0]} not found`)
     // Push child to parent container
-    Stack.push(new Stack.Container(idParts[1], parent))
+    const child = new Stack.Container(idParts[1])
+    parent.add(child)
+    Stack.push(child)
   }
 }
 
