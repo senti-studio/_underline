@@ -9,13 +9,13 @@ export function resolve(stack: ContainerStack, parent: RenderReference): Referen
   const ref = new Map()
   // Resolve flex containers first
   stack.forEach((c: Container) => {
-    if (c.flex === DisplayFlag.FlexCol || c.flex === DisplayFlag.FlexRow) {
+    if (c.flex.includes(DisplayFlag.FlexCol) || c.flex.includes(DisplayFlag.FlexRow)) {
       resolveFlex(parent, c, c.children)
     }
   })
   // Then resolve all containers
   stack.forEach((c: Container) => {
-    const cRes = resolveContainer(c, parent)
+    const cRes = resolveContainer(c, c.parent ?? parent)
     ref.set(cRes.name, cRes)
   })
 
@@ -26,6 +26,7 @@ function resolveContainer(container: Container, parent: RenderReference): Render
   // Resolve expressions
   let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
   let p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
+  console.log('padding starting')
   // We make sure that the container doesnt go out of bounds
   // Can happen when position is not 0 and dimensions are set to 100%
   if (container.position != null && typeof container.position.x === 'number') {
@@ -42,6 +43,7 @@ function resolveContainer(container: Container, parent: RenderReference): Render
   }
 
   // Resolve paddings
+
   if (parent.padding != null && container.display !== DisplayFlag.Absolute) {
     p.x += parent.padding.l
 
@@ -255,21 +257,20 @@ function resolveFlex(
   const pRef = resolveContainer(flexParent, parent)
   ref.push(pRef)
 
-  const maxSpace =
-    flexParent.flex === DisplayFlag.FlexRow
-      ? (pRef.dimensions!.w as number) // Left to right display
-      : (pRef.dimensions!.h as number) // Top to bottom display
+  const maxSpace = flexParent.flex.includes(DisplayFlag.FlexRow)
+    ? (pRef.dimensions!.w as number) // Left to right display
+    : (pRef.dimensions!.h as number) // Top to bottom display
 
   let fixedSpace = 0
   let dynamicCount = 0
   // Calculate space
   children.forEach((c: Container) => {
-    if (c.flex === DisplayFlag.FlexFixed) {
+    if (c.flex.includes(DisplayFlag.FlexFixed)) {
       if (c.dimensions == null) {
         throw new Error(`No dimensions provided for fixed flex child ${c.name}`)
       }
       fixedSpace += c.dimensions.w as number // fixed container cant have expressions
-    } else if (c.flex === DisplayFlag.FlexDynamic) {
+    } else if (c.flex.push(DisplayFlag.FlexDynamic)) {
       ++dynamicCount
     } else {
       throw new Error(`No flex display option provided for ${c.name}`)
@@ -290,9 +291,8 @@ function resolveFlex(
       w: c.dimensions ? c.dimensions.w : 0,
       h: c.dimensions ? c.dimensions.h : 0,
     }
-    //TODO: Recursive call for all children
-    if (c.flex === DisplayFlag.FlexDynamic) {
-      if (flexParent.flex === DisplayFlag.FlexRow) {
+    if (c.flex.includes(DisplayFlag.FlexDynamic)) {
+      if (flexParent.flex.includes(DisplayFlag.FlexRow)) {
         cD.w = dynamicSpacePerChild
         cD.h = pRef.dimensions!.h as number
       } else {
@@ -300,7 +300,7 @@ function resolveFlex(
         cD.w = pRef.dimensions!.w as number
       }
     }
-    if (flexParent.flex === DisplayFlag.FlexRow) {
+    if (flexParent.flex.includes(DisplayFlag.FlexRow)) {
       cP.x = currentPosition
     } else {
       cP.y = currentPosition
@@ -309,8 +309,5 @@ function resolveFlex(
 
     c.dimensions = cD
     c.position = cP
-
-    // const cRef = resolveContainer(c, pRef)
-    // ref.push(cRef)
   })
 }

@@ -88,7 +88,7 @@ _u.begin = (identifier: string): void => {
     const parent = Stack.find(idParts[0])
     if (parent == null) throw new Error(`Parent container ${idParts[0]} not found`)
     // Push child to parent container
-    const child = new Stack.Container(idParts[1])
+    const child = new Stack.Container(idParts[1], parent)
     parent.add(child)
     Stack.push(child)
   }
@@ -117,7 +117,7 @@ _u.display = (...types: DisplayFlag[]): void => {
       type === DisplayFlag.FlexDynamic ||
       type === DisplayFlag.FlexFixed
     ) {
-      current.flex = type
+      current.flex.push(type)
     }
   })
 }

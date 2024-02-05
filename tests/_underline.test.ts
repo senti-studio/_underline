@@ -127,48 +127,54 @@ describe('display', () => {
   const successProvider = () => [
     {
       name: 'should set inherit',
-      types: DisplayFlag.Inherit,
+      types: [DisplayFlag.Inherit],
       displayResult: DisplayFlag.Inherit,
-      flexResult: null,
+      flexResult: [],
     },
     {
       name: 'should set absolute',
-      types: DisplayFlag.Absolute,
+      types: [DisplayFlag.Absolute],
       displayResult: DisplayFlag.Absolute,
-      flexResult: null,
+      flexResult: [],
     },
     {
       name: 'should set flex col',
-      types: DisplayFlag.FlexCol,
+      types: [DisplayFlag.FlexCol],
       displayResult: DisplayFlag.Inherit,
-      flexResult: DisplayFlag.FlexCol,
+      flexResult: [DisplayFlag.FlexCol],
     },
     {
       name: 'should set flex row',
-      types: DisplayFlag.FlexRow,
+      types: [DisplayFlag.FlexRow, DisplayFlag.Inherit],
       displayResult: DisplayFlag.Inherit,
-      flexResult: DisplayFlag.FlexRow,
+      flexResult: [DisplayFlag.FlexRow],
     },
     {
       name: 'should set flex dynamic',
-      types: DisplayFlag.FlexDynamic,
+      types: [DisplayFlag.FlexDynamic],
       displayResult: DisplayFlag.Inherit,
-      flexResult: DisplayFlag.FlexDynamic,
+      flexResult: [DisplayFlag.FlexDynamic],
     },
     {
       name: 'should set flex fixed',
-      types: DisplayFlag.FlexFixed,
+      types: [DisplayFlag.FlexFixed],
       displayResult: DisplayFlag.Inherit,
-      flexResult: DisplayFlag.FlexFixed,
+      flexResult: [DisplayFlag.FlexFixed],
+    },
+    {
+      name: 'should set flex fixed and flex row',
+      types: [DisplayFlag.FlexFixed, DisplayFlag.FlexRow],
+      displayResult: DisplayFlag.Inherit,
+      flexResult: [DisplayFlag.FlexFixed, DisplayFlag.FlexRow],
     },
   ]
   test.each(successProvider())('$name', (provider) => {
     current.display = DisplayFlag.Inherit
-    current.flex = null
+    current.flex = []
     vi.mocked(ensureOpenStack).mockReturnValue(current)
-    expect(current.flex).toBe(null)
+    expect(current.flex).toStrictEqual([])
 
-    U._u.display(provider.types)
+    U._u.display(...provider.types)
 
     expect(current.display).toStrictEqual(provider.displayResult)
     expect(current.flex).toStrictEqual(provider.flexResult)

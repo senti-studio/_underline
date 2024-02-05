@@ -10,8 +10,9 @@ let _currentContainer: Container | null = null
 
 export class Container {
   public readonly container: PIXI.Graphics = new PIXI.Graphics()
+  public readonly parent: RenderReference | null = null
   public display: DisplayFlag = DisplayFlag.Inherit
-  public flex: DisplayFlag | null = null
+  public flex: DisplayFlag[] = []
   public dimensions: Dimensions<number | string> | null = null
   public border: Border | null = null
   public position: Position<number | string> | null = null
@@ -20,8 +21,18 @@ export class Container {
   public text: string | null = null
   public textStyle: string | null = null
 
-  constructor(public readonly name: string) {
+  constructor(
+    public readonly name: string,
+    parent: Container | null = null
+  ) {
     this.container.name = name
+    if (parent != null) {
+      this.parent = <RenderReference>{
+        dimensions: parent.dimensions,
+        position: parent.position,
+        padding: parent.padding,
+      }
+    }
   }
 
   private _children: Array<Container> = []
@@ -33,13 +44,7 @@ export class Container {
   }
 
   public isFlex(): boolean {
-    if (this.flex != null) {
-      return true
-    }
-    if (this.display === DisplayFlag.FlexCol || this.display === DisplayFlag.FlexRow) {
-      return true
-    }
-    return false
+    return this.flex.length > 0
   }
 
   public hasExpressions(transform: Position<number | string> | Dimensions<number | string>): boolean {
