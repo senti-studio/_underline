@@ -125,7 +125,6 @@ function resolveContainer(container: Container, parent: RenderReference): Render
       tRef = resolveText(container, d, p, tStyle, uStyle)
     }
   }
-
   return {
     name: container.name,
     container: container.container,

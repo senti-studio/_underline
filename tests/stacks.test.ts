@@ -38,7 +38,16 @@ describe('getNameIdentifiers', () => {
       const result = Stack.getNameIdentifiers('parent > child')
       expect(result).toStrictEqual(['parent', 'child'])
     })
-    test('should return parent and child with !', () => {})
+    test('should return parent and child quick mode', () => {
+      Stack.getNameIdentifiers('parent')
+      const result = Stack.getNameIdentifiers('>> child')
+      expect(result).toStrictEqual(['parent', 'child'])
+    })
+    test('should return parent and child with ! quick mode', () => {
+      Stack.getNameIdentifiers('parent')
+      const result = Stack.getNameIdentifiers('>> child!')
+      expect(result).toStrictEqual(['parent', 'child'])
+    })
   })
   describe('failure cases', () => {
     test('should return null if no parent is found', () => {})
