@@ -7,57 +7,59 @@ import { Container, ContainerStack, ReferenceStack } from './stacks'
 
 export function resolve(stack: ContainerStack, parent: RenderReference): ReferenceStack {
   const ref = new Map()
+
   // Resolve flex containers first
   stack.forEach((c: Container) => {
     if (c.flex.includes(DisplayFlag.FlexCol) || c.flex.includes(DisplayFlag.FlexRow)) {
       resolveFlex(parent, c, c.children)
     }
   })
+
   // Then resolve all containers
   stack.forEach((c: Container) => {
-    const cRes = resolveContainer(c, c.parent ?? parent)
+    const cRes = resolveContainer(c, ref.get(c.parent) ?? parent)
     ref.set(cRes.name, cRes)
   })
-
   return ref
 }
 
-function resolveContainer(container: Container, parent: RenderReference): RenderReference {
+function resolveContainer(container: Container, parent: RenderReference | Container): RenderReference {
   // Resolve expressions
   let d = resolveDimensions(container, parent.dimensions as Dimensions<number>)
   let p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
-  console.log('padding starting')
+
   // We make sure that the container doesnt go out of bounds
   // Can happen when position is not 0 and dimensions are set to 100%
+  const parentWidth = parent.dimensions!.w as number
+  const parentHeight = parent.dimensions!.h as number
   if (container.position != null && typeof container.position.x === 'number') {
     // Check the initial x position + resolved width
-    if (container.position.x + d.w > parent.dimensions.w) {
-      d.w = parent.dimensions.w - container.position.x
+    if (container.position.x + d.w > parentWidth) {
+      d.w = parentWidth - container.position.x
     }
   }
   if (container.position != null && typeof container.position.y === 'number') {
     // Check the initial y position + resolved height
-    if (container.position.y + d.h > parent.dimensions.h) {
-      d.h = parent.dimensions.h - container.position.y
+    if (container.position.y + d.h > parentHeight) {
+      d.h = parentHeight - container.position.y
     }
   }
 
   // Resolve paddings
-
   if (parent.padding != null && container.display !== DisplayFlag.Absolute) {
     p.x += parent.padding.l
-
-    if (p.x + d.w >= parent.dimensions.w - parent.padding.r) {
-      d.w = parent.dimensions.w - parent.padding.r - parent.padding.l
+    if (p.x + d.w >= parentWidth - parent.padding.r) {
+      d.w = parentWidth - parent.padding.r - parent.padding.l
       // If the container has a fixed position value for x
       // We need to subtract it too
       if (container.position != null && typeof container.position.x === 'number') {
         d.w -= container.position.x
       }
     }
+
     p.y += parent.padding.t
-    if (p.y + d.h >= parent.dimensions.h - parent.padding.b) {
-      d.h = parent.dimensions.h - parent.padding.b - parent.padding.t
+    if (p.y + d.h >= parentHeight - parent.padding.b) {
+      d.h = parentHeight - parent.padding.b - parent.padding.t
       // If the container has a fixed position value for y
       // We need to subtract it too
       if (container.position != null && typeof container.position.y === 'number') {
@@ -78,10 +80,13 @@ function resolveContainer(container: Container, parent: RenderReference): Render
     if (container.dimensions == null) {
       d = { w: tRef.dimensions.w, h: tRef.dimensions.h }
       // Reevaluate the position (which needs the dimensions)
-      p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
+      if (typeof container.position!.x === 'string') {
+        p = resolvePositions(container, d, parent.position as Position<number>, parent.dimensions as Dimensions<number>)
+      }
       tRef = resolveText(container, d, p, tStyle, uStyle)
     }
   }
+
   return {
     name: container.name,
     container: container.container,
@@ -93,11 +98,12 @@ function resolveContainer(container: Container, parent: RenderReference): Render
     padding: container.padding,
     text: tRef ? tRef.text : null,
     textStyle: tStyle,
-  } satisfies RenderReference
+  }
 }
 
 function resolveDimensions(container: Container, parent: Dimensions<number>): Dimensions<number> {
   let dRef = <Dimensions<number>>{}
+
   switch (true) {
     /**
      * Display Absolute - No dimensions specified
@@ -117,7 +123,8 @@ function resolveDimensions(container: Container, parent: Dimensions<number>): Di
      * Inherits dimensions from parent
      */
     case container.display === DisplayFlag.Inherit && container.dimensions == null:
-      dRef = parent
+      dRef.w = parent.w
+      dRef.h = parent.h
       break
     /**
      * Display Absolute - Dimensions specified
@@ -172,7 +179,8 @@ function resolvePositions(
      * But rather stacked on top of each other.
      */
     case stack.display === DisplayFlag.Inherit && stack.position == null:
-      pRef = parentP
+      pRef.x = parentP.x
+      pRef.y = parentP.y
       break
     /**
      * Display Absolute - Position specified
