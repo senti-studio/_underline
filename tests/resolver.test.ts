@@ -120,6 +120,60 @@ describe('resolve', () => {
     })
   })
 
+  describe('flex in flex', () => {
+    const parent = <RenderReference>{
+      dimensions: <Dimensions<number>>{ w: 500, h: 500 },
+      position: <Position<number>>{ x: 0, y: 0 },
+    }
+
+    const main = new Container('main')
+    const flex = new Container('flex1', main.name)
+    flex.flex.push(DisplayFlag.FlexCol)
+    const flexchild1 = new Container('flexchild1', flex.name)
+    flexchild1.flex.push(DisplayFlag.FlexFixed)
+    flexchild1.dimensions = <Dimensions<number>>{ w: 100, h: 100 }
+    const flexchild2 = new Container('flexchild2', flex.name)
+    flexchild2.flex.push(DisplayFlag.FlexDynamic, DisplayFlag.FlexRow)
+
+    const flex2 = new Container('flex2', flexchild2.name)
+    flex2.flex.push(DisplayFlag.FlexDynamic)
+    const flex3 = new Container('flex3', flexchild2.name)
+    flex3.flex.push(DisplayFlag.FlexDynamic)
+
+    flex.add(flexchild1)
+    flex.add(flexchild2)
+    flexchild2.add(flex2)
+    flexchild2.add(flex3)
+    main.add(flex)
+
+    const stack = new Map([
+      ['main', main],
+      ['flex1', flex],
+      ['flexchild1', flexchild1],
+      ['flexchild2', flexchild2],
+      ['flex2', flex2],
+      ['flex3', flex3],
+    ])
+
+    const result = resolve(stack, parent)
+
+    test('flex should resolve', () => {
+      expect(result.size).toStrictEqual(6)
+
+      expect(result.get('flexchild2')!.dimensions).toStrictEqual({ w: 500, h: 400 })
+      expect(result.get('flexchild2')!.position).toStrictEqual({ x: 0, y: 100 })
+      expect(result.get('flexchild2')!.display).toStrictEqual(DisplayFlag.Inherit)
+    })
+    test('flex2 should resolve', () => {
+      expect(result.get('flex2')!.dimensions).toStrictEqual({ w: 250, h: 400 })
+      expect(result.get('flex2')!.position).toStrictEqual({ x: 0, y: 100 })
+    })
+    test('flex3 should resolve', () => {
+      expect(result.get('flex3')!.dimensions).toStrictEqual({ w: 250, h: 400 })
+      expect(result.get('flex3')!.position).toStrictEqual({ x: 250, y: 100 })
+    })
+  })
+
   describe('resolve paddings and overflow', () => {
     const parent = <RenderReference>{
       dimensions: <Dimensions<number>>{ w: 500, h: 500 },
