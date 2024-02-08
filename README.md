@@ -22,39 +22,33 @@ npm install @tinytales/_underline
 ## Example
 
 ```typescript
-_u.begin('main') // main
+_u.begin('main')
 _u.display(DisplayFlag.FlexRow)
 
-_u.begin('main > left-area') // main -> left-area
+_u.begin('main > left-area')
 _u.display(DisplayFlag.FlexFixed)
 _u.rect(25, '100%')
 _u.fill('#ddd')
-_u.end()
 
-_u.begin('main > content') // main -> fill center content
+_u.begin('main > content')
 _u.display(DisplayFlag.FlexDynamic)
 _u.rect('100%', '100%')
 _u.fill('#fff000')
-_u.end()
 
-_u.begin('main > right-area') // main -> right-area
+_u.begin('main > right-area')
 _u.display(DisplayFlag.FlexFixed)
 _u.rect(25, '100%')
 _u.fill('#ddd')
-_u.end()
 
-_u.end()
 _u.renderTo(this)
 ```
-
-Soon i will add more examples into the **_/example_** folder.
 
 <br />
 
 ## Roadmap
 
 - [ ] Key / Mouse Events
-- [ ] Text / Images
+- [ ] ~~Text~~ / Images
 - [ ] Examples & Unittests
 - [ ] More shapes (currently only rect)
 - [ ] More useful CSS options
