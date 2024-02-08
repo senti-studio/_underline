@@ -9,7 +9,7 @@ import { _uGlobal } from '../src/_uGlobal'
 _uGlobal.resolution = { w: 1000, h: 1000 }
 
 describe('resolve', () => {
-  /*describe('base flex', () => {
+  describe('base flex', () => {
     const parent = <RenderReference>{
       dimensions: <Dimensions<number>>{ w: 500, h: 500 },
       position: <Position<number>>{ x: 0, y: 0 },
@@ -73,7 +73,52 @@ describe('resolve', () => {
       expect(result.get('flexchild2')!.position).toStrictEqual({ x: 100, y: 0 })
       expect(result.get('flexchild2')!.name).toStrictEqual('flexchild2')
     })
-  })*/
+  })
+
+  describe('flex col', () => {
+    const parent = <RenderReference>{
+      dimensions: <Dimensions<number>>{ w: 500, h: 500 },
+      position: <Position<number>>{ x: 0, y: 0 },
+    }
+
+    const main = new Container('main')
+    const flex = new Container('flex1', main.name)
+    flex.flex.push(DisplayFlag.FlexCol)
+    const flexchild1 = new Container('flexchild1', flex.name)
+    flexchild1.flex.push(DisplayFlag.FlexFixed)
+    flexchild1.dimensions = <Dimensions<number>>{ w: 100, h: 100 }
+    const flexchild2 = new Container('flexchild2', flex.name)
+    flexchild2.flex.push(DisplayFlag.FlexDynamic)
+
+    flex.add(flexchild1)
+    flex.add(flexchild2)
+    main.add(flex)
+
+    const stack = new Map([
+      ['main', main],
+      ['flex1', flex],
+      ['flexchild1', flexchild1],
+      ['flexchild2', flexchild2],
+    ])
+
+    const result = resolve(stack, parent)
+
+    test('flex should resolve', () => {
+      expect(result.size).toStrictEqual(4)
+
+      expect(result.get('flex1')!.dimensions).toStrictEqual({ w: 500, h: 500 })
+      expect(result.get('flex1')!.position).toStrictEqual({ x: 0, y: 0 })
+      expect(result.get('flex1')!.display).toStrictEqual(DisplayFlag.Inherit)
+    })
+    test('flexchild1 should resolve', () => {
+      expect(result.get('flexchild1')!.dimensions).toStrictEqual({ w: 100, h: 100 })
+      expect(result.get('flexchild1')!.position).toStrictEqual({ x: 0, y: 0 })
+    })
+    test('flexchild2 should resolve', () => {
+      expect(result.get('flexchild2')!.dimensions).toStrictEqual({ w: 500, h: 400 })
+      expect(result.get('flexchild2')!.position).toStrictEqual({ x: 0, y: 100 })
+    })
+  })
 
   describe('resolve paddings and overflow', () => {
     const parent = <RenderReference>{
