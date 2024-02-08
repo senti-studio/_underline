@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js'
+import { Signal } from './signals'
 
 export enum TransformType {
   Width,
@@ -27,6 +28,7 @@ export interface RenderReference {
   fill: string | null
   text: PIXI.Text | null
   textStyle: PIXI.TextStyle | null
+  signal: Signal | null
 }
 export type Border = { width: number; color: string }
 export type Position<T> = {

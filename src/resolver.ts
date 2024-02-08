@@ -98,6 +98,7 @@ function resolveContainer(container: Container, parent: RenderReference | Contai
     padding: container.padding,
     text: tRef ? tRef.text : null,
     textStyle: tStyle,
+    signal: container.signal,
   }
 }
 

@@ -1,6 +1,7 @@
-import { _uBase, Area, DisplayFlag, RenderReference } from './types'
+import { _uBase, Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { resolve } from './resolver'
 import * as Stack from './stacks'
+import { makeEvent, Signal, SignalType } from './signals'
 
 export interface _underline extends _uBase {
   /**
@@ -58,6 +59,13 @@ export interface _underline extends _uBase {
   padding(t: number, r: number, b: number, l: number): void
   padding(tb: number, rl: number): void
   padding(all: number): void
+  /**
+   * Adds a signal event with callback.
+   * @param type - Type of the signal (MouseFlag or KeyFlag)
+   * @param callback - Callback function
+   * @param arg - Argument for the callback function (event.data)
+   */
+  signal(type: SignalType, callback: Function, arg: any): void
 }
 
 export const _u: _underline = <_underline>{}
@@ -94,9 +102,14 @@ _u.begin = (identifier: string): void => {
   }
 }
 
+_u.signal = (type: SignalType, callback: Function, arg: any): void => {
+  const current = Stack.ensureOpenStack()
+  current.signal = { type: type, callback: callback, arg: arg } satisfies Signal
+}
+
 _u.dimension = (w: number | string, h: number | string): void => {
   const current = Stack.ensureOpenStack()
-  current.dimensions = { w: w, h: h }
+  current.dimensions = { w: w, h: h } satisfies Dimensions<number | string>
 }
 
 _u.fill = (color: string): void => {
@@ -124,12 +137,12 @@ _u.display = (...types: DisplayFlag[]): void => {
 
 _u.border = (width: number, color: string): void => {
   const current = Stack.ensureOpenStack()
-  current.border = { width: width, color: color }
+  current.border = { width: width, color: color } satisfies Border
 }
 
 _u.position = (x: number | string, y: number | string): void => {
   const current = Stack.ensureOpenStack()
-  current.position = { x: x, y: y }
+  current.position = { x: x, y: y } satisfies Position<number | string>
 }
 
 _u.text = (text: string, style?: string): void => {
@@ -182,6 +195,14 @@ function drawContainer(current: Stack.Container, stack: Stack.ReferenceStack, pa
   }
   // Draw shape
   c.drawRect(cRef.position.x, cRef.position.y, cRef.dimensions.w, cRef.dimensions.h)
+  // Signal
+  c.eventMode = 'none'
+  if (current.signal !== null) {
+    c.on('pointerdown', (event: any) => {
+      current.signal!.callback(makeEvent(current.signal!.type, current.signal!.arg))
+    })
+    c.eventMode = 'static'
+  }
   // Add to parent
   parent.container.addChild(c)
 }

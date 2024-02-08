@@ -1,11 +1,11 @@
 import * as PIXI from 'pixi.js'
 import { Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from './types'
+import { Signal } from './signals'
 
 export type ContainerStack = Map<string, Container>
 export type ReferenceStack = Map<string, RenderReference>
 
 let _containerStack: ContainerStack = new Map()
-// let _referenceStack: ReferenceStack = new Map()
 let _currentContainer: Container | null = null
 
 export class Container {
@@ -20,6 +20,7 @@ export class Container {
   public fill: string | null = null
   public text: string | null = null
   public textStyle: string | null = null
+  public signal: Signal | null = null
 
   constructor(
     public readonly name: string,
