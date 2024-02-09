@@ -199,6 +199,7 @@ function drawContainer(current: Stack.Container, stack: Stack.ReferenceStack, pa
   c.eventMode = 'none'
   if (current.signal !== null) {
     c.on('pointerdown', (event: any) => {
+      console.log('pointer event', event)
       current.signal!.callback(makeEvent(current.signal!.type, current.signal!.arg))
     })
     c.eventMode = 'static'

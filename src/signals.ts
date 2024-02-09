@@ -30,3 +30,28 @@ export interface uEvent {
 export function makeEvent(type: SignalType, arg: any): uEvent {
   return { type: type, data: arg } satisfies uEvent
 }
+
+export function getEventName(type: SignalType): string {
+  switch (type) {
+    case MouseFlag.Left:
+      return 'click'
+    case MouseFlag.Right:
+      return 'rightclick'
+    case MouseFlag.Middle:
+      return 'middleclick'
+    case KeyFlag.Ctrl:
+      return 'ctrl'
+    case KeyFlag.Alt:
+      return 'alt'
+    case KeyFlag.Shift:
+      return 'shift'
+    case KeyFlag.Esc:
+      return 'esc'
+    case KeyFlag.Enter:
+      return 'enter'
+    case KeyFlag.Backspace:
+      return 'backspace'
+    case KeyFlag.Space:
+      return 'space'
+  }
+}
