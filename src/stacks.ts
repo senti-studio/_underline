@@ -20,7 +20,7 @@ export class Container {
   public fill: string | null = null
   public text: string | null = null
   public textStyle: string | null = null
-  public signal: Signal | null = null
+  public signals: Signal[] = []
 
   constructor(
     public readonly name: string,
@@ -30,8 +30,8 @@ export class Container {
     this.parent = parent
   }
 
-  private _children: Array<Container> = []
-  get children(): Array<Container> {
+  private _children: Container[] = []
+  get children(): Container[] {
     return this._children
   }
   public add(child: Container): void {

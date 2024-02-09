@@ -1,7 +1,8 @@
 import { _uBase, Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { resolve } from './resolver'
 import * as Stack from './stacks'
-import { makeEvent, Signal, SignalType } from './signals'
+import { createEvent, determineSignalType, KeyFlag, MouseFlag, Signal, signalIsValid, SignalType } from './signals'
+import { FederatedMouseEvent, Graphics } from 'pixi.js'
 
 export interface _underline extends _uBase {
   /**
@@ -102,9 +103,30 @@ _u.begin = (identifier: string): void => {
   }
 }
 
-_u.signal = (type: SignalType, callback: Function, arg: any): void => {
+_u.signal = (types: SignalType | SignalType[], callback: Function, arg: any): void => {
   const current = Stack.ensureOpenStack()
-  current.signal = { type: type, callback: callback, arg: arg } satisfies Signal
+  console.log(current.name, types)
+
+  const isMouseType = (v: string) => Object.values(MouseFlag).includes(v as MouseFlag)
+  const isKeyType = (v: string) => Object.values(KeyFlag).includes(v as KeyFlag)
+
+  let type: MouseFlag
+  let keys: KeyFlag[] = []
+  if (Array.isArray(types)) {
+    // Find mouse signal
+    const mouseType = types.find((t: SignalType) => isMouseType(t))
+    if (!mouseType) return
+    type = mouseType as MouseFlag
+
+    // Find key signals
+    const keyTypes = types.filter((t: SignalType) => isKeyType(t))
+    keys = keyTypes as KeyFlag[]
+  } else {
+    if (!isMouseType(types)) return
+    type = types as MouseFlag
+  }
+
+  current.signals.push({ type: type, keys: keys, callback: callback, arg: arg } satisfies Signal)
 }
 
 _u.dimension = (w: number | string, h: number | string): void => {
@@ -197,13 +219,24 @@ function drawContainer(current: Stack.Container, stack: Stack.ReferenceStack, pa
   c.drawRect(cRef.position.x, cRef.position.y, cRef.dimensions.w, cRef.dimensions.h)
   // Signal
   c.eventMode = 'none'
-  if (current.signal !== null) {
-    c.on('pointerdown', (event: any) => {
-      console.log('pointer event', event)
-      current.signal!.callback(makeEvent(current.signal!.type, current.signal!.arg))
-    })
+  if (current.signals.length > 0) {
+    assignSignals(c, current)
     c.eventMode = 'static'
   }
   // Add to parent
   parent.container.addChild(c)
+}
+
+function assignSignals(c: Graphics, current: Stack.Container): void {
+  // Assign each signal acording to its type
+  current.signals.forEach((signal: Signal) => {
+    // Assign signal
+    c.on(determineSignalType(signal), (event: FederatedMouseEvent) => {
+      // Only trigger callback if signal is valid
+      if (signalIsValid(signal, event)) {
+        // Create uEvent and trigger callback
+        signal.callback(createEvent(signal.type, signal.arg))
+      }
+    })
+  })
 }
