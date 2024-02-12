@@ -4,8 +4,8 @@ export enum MouseFlag {
   LeftClick = 'leftclick',
   RightClick = 'rightclick',
   Hover = 'hover',
-  Out = 'out',
-  In = 'in',
+  Leave = 'leave',
+  Enter = 'enter',
 }
 
 export enum KeyFlag {
@@ -40,9 +40,9 @@ export function determineSignalType(signal: Signal): string {
   switch (signal.type) {
     case MouseFlag.Hover:
       return 'pointermove'
-    case MouseFlag.Out:
+    case MouseFlag.Leave:
       return 'pointerout'
-    case MouseFlag.In:
+    case MouseFlag.Enter:
       return 'pointerover'
   }
   return 'click'

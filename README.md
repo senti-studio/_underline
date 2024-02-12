@@ -47,9 +47,9 @@ _u.renderTo(this)
 
 ## Roadmap
 
-- [ ] Key / Mouse Events
+- [x] Key / Mouse Events
 - [ ] ~~Text~~ / Images
-- [ ] Examples & Unittests
+- [ ] Examples & ~~Unittests~~
 - [ ] More shapes (currently only rect)
 - [ ] More useful CSS options
 - [ ] Tables & Lists

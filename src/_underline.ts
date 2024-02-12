@@ -18,9 +18,13 @@ export interface _underline extends _uBase {
   dimension(w: number | string, h: number | string): void
   /**
    * Fills the shape with the given color, if not used, the shape is transparent.
-   * @param color - Fill color for the shape
+   * @param color - Fill color (rgb #ffffff or red, blue, green, yellow, ...)
+   * @param hover - Fill color when hovered (hover:#ffffff or hover:red, ...)
+   * @param click - Fill color when clicked (click:#ffffff or click:red, ...)
+   * @param enter - Fill color when mouse enters (enter:#ffffff or enter:red, ...)
+   * @param leave - Fill color when mouse leaves (leave:#ffffff or leave:red, ...)
    */
-  fill(color: string): void
+  fill(color: string, hover?: string, click?: string, enter?: string, leave?: string): void
   /**
    * Default display is Inherit.
    * @param type - Display type of the shape, for example Flex, Absolute, ...
@@ -67,6 +71,7 @@ export interface _underline extends _uBase {
    * @param arg - Argument for the callback function (event.data)
    */
   signal(type: SignalType, callback: Function, arg: any): void
+  signal(type: SignalType[], callback: Function, arg: any): void
 }
 
 export const _u: _underline = <_underline>{}
@@ -105,7 +110,6 @@ _u.begin = (identifier: string): void => {
 
 _u.signal = (types: SignalType | SignalType[], callback: Function, arg: any): void => {
   const current = Stack.ensureOpenStack()
-  console.log(current.name, types)
 
   const isMouseType = (v: string) => Object.values(MouseFlag).includes(v as MouseFlag)
   const isKeyType = (v: string) => Object.values(KeyFlag).includes(v as KeyFlag)
@@ -134,9 +138,16 @@ _u.dimension = (w: number | string, h: number | string): void => {
   current.dimensions = { w: w, h: h } satisfies Dimensions<number | string>
 }
 
-_u.fill = (color: string): void => {
+_u.fill = (color: string, ...args: string[]): void => {
   const current = Stack.ensureOpenStack()
+
   current.fill = color
+  args.forEach((c: string) => {
+    if (c.startsWith('hover:')) current.fillEvents.set('hover', c.split(':')[1])
+    if (c.startsWith('click:')) current.fillEvents.set('click', c.split(':')[1])
+    if (c.startsWith('enter:')) current.fillEvents.set('enter', c.split(':')[1])
+    if (c.startsWith('leave:')) current.fillEvents.set('leave', c.split(':')[1])
+  })
 }
 
 _u.display = (...types: DisplayFlag[]): void => {
@@ -217,14 +228,36 @@ function drawContainer(current: Stack.Container, stack: Stack.ReferenceStack, pa
   }
   // Draw shape
   c.drawRect(cRef.position.x, cRef.position.y, cRef.dimensions.w, cRef.dimensions.h)
-  // Signal
+  // Signals
   c.eventMode = 'none'
   if (current.signals.length > 0) {
     assignSignals(c, current)
     c.eventMode = 'static'
   }
+  if (current.fillEvents.size > 0) {
+    assignFillEvents(c, current)
+  }
   // Add to parent
   parent.container.addChild(c)
+}
+
+function assignFillEvents(c: Graphics, current: Stack.Container): void {
+  current.fillEvents.forEach((color: string, name: string) => {
+    if (name === 'hover') {
+      c.on(current.name + ':hover', () => {
+        c.tint = color
+      })
+      c.on(current.name + ':leave', () => {
+        c.tint = 0xffffff
+        console.log('putting tint back')
+      })
+    } else {
+      const eventName = current.name + ':' + name
+      c.on(eventName, () => {
+        c.tint = color
+      })
+    }
+  })
 }
 
 function assignSignals(c: Graphics, current: Stack.Container): void {
@@ -236,6 +269,15 @@ function assignSignals(c: Graphics, current: Stack.Container): void {
       if (signalIsValid(signal, event)) {
         // Create uEvent and trigger callback
         signal.callback(createEvent(signal.type, signal.arg))
+      }
+      // Emit fill events
+      const emit = (t: string) => c.emit(current.name + ':' + t, event)
+      if (signal.type === MouseFlag.Hover && current.fillEvents.has('hover')) {
+        emit('hover')
+      } else if (signal.type === MouseFlag.Leave && current.fillEvents.has('leave')) {
+        emit('leave')
+      } else if (signal.type === MouseFlag.Enter && current.fillEvents.has('enter')) {
+        emit('enter')
       }
     })
   })

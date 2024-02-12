@@ -18,6 +18,7 @@ export class Container {
   public position: Position<number | string> | null = null
   public padding: Area | null = null
   public fill: string | null = null
+  public fillEvents: Map<string, string> = new Map()
   public text: string | null = null
   public textStyle: string | null = null
   public signals: Signal[] = []
