@@ -1,7 +1,9 @@
 import { _uBase, Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { resolve } from './resolver'
 import * as Stack from './stacks'
-import { createEvent, determineSignalType, KeyFlag, MouseFlag, Signal, signalIsValid, SignalType } from './signals'
+import { 
+  createEvent, determineSignalType, KeyFlag, MouseFlag, Signal, signalIsValid, SignalType 
+} from './signals'
 import { FederatedMouseEvent, Graphics } from 'pixi.js'
 
 export interface _underline extends _uBase {
@@ -33,7 +35,8 @@ export interface _underline extends _uBase {
   /**
    * Default display is Inherit.
    * @param type - Display type of the shape, for example Flex, Absolute, ...
-   * @param additional - Possibility to add an additional property for a flex container, example Inherit, Absolute
+   * @param additional - Possibility to add an additional property for a flex container, example 
+   * Inherit, Absolute
    */
   display(type: DisplayFlag, additional: DisplayFlag): void
   /**
@@ -84,8 +87,6 @@ _u.renderTo = (reference: RenderReference): void => {
   const resolvedStack = resolve(stack, reference)
   if (resolvedStack.size === 0) return
 
-  // Keep reference
-  // Stack.addReference(resolvedStack)
   // Draw to screen
   draw(stack, resolvedStack, reference)
   // Reset stack
@@ -208,11 +209,19 @@ _u.padding = (p1: number, p2?: number | null, p3?: number | null, p4?: number | 
   current.padding = padding
 }
 
-function draw(stack: Stack.ContainerStack, stackRef: Stack.ReferenceStack, parent: RenderReference): void {
+function draw(
+  stack: Stack.ContainerStack, 
+  stackRef: Stack.ReferenceStack, 
+  parent: RenderReference
+): void {
   stack.forEach((c: Stack.Container) => drawContainer(c, stackRef, parent))
 }
 
-function drawContainer(current: Stack.Container, stack: Stack.ReferenceStack, parent: RenderReference): void {
+function drawContainer(
+  current: Stack.Container, 
+  stack: Stack.ReferenceStack, 
+  parent: RenderReference
+): void {
   const c = current.container
   const cRef = stack.get(current.name)!
   // Begin fill
