@@ -1,8 +1,8 @@
 import { _uBase, Area, Border, Dimensions, DisplayFlag, Position, RenderReference } from './types'
 import { resolve } from './resolver'
 import * as Stack from './stacks'
-import { 
-  createEvent, determineSignalType, KeyFlag, MouseFlag, Signal, signalIsValid, SignalType 
+import {
+  createEvent, determineSignalType, KeyFlag, MouseFlag, Signal, signalIsValid, SignalType
 } from './signals'
 import { FederatedMouseEvent, Graphics } from 'pixi.js'
 
@@ -210,16 +210,16 @@ _u.padding = (p1: number, p2?: number | null, p3?: number | null, p4?: number | 
 }
 
 function draw(
-  stack: Stack.ContainerStack, 
-  stackRef: Stack.ReferenceStack, 
+  stack: Stack.ContainerStack,
+  stackRef: Stack.ReferenceStack,
   parent: RenderReference
 ): void {
   stack.forEach((c: Stack.Container) => drawContainer(c, stackRef, parent))
 }
 
 function drawContainer(
-  current: Stack.Container, 
-  stack: Stack.ReferenceStack, 
+  current: Stack.Container,
+  stack: Stack.ReferenceStack,
   parent: RenderReference
 ): void {
   const c = current.container
@@ -250,6 +250,8 @@ function drawContainer(
   parent.container.addChild(c)
 }
 
+// TODO: REWORK CUSTOM SIGNALS
+// hover = register in and out
 function assignFillEvents(c: Graphics, current: Stack.Container): void {
   current.fillEvents.forEach((color: string, name: string) => {
     if (name === 'hover') {

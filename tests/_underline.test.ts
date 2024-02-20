@@ -1,9 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import * as U from '../src/_underline'
 import { pop, Container, getNameIdentifiers, ensureOpenStack, find } from '../src/stacks'
-import * as Stacks from '../src/stacks'
 import { resolve } from '../src/resolver'
-import { DisplayFlag, RenderReference } from '../src/types'
+import { DisplayFlag } from '../src/types'
 
 vi.mock('../src/stacks.ts', () => {
   return {
