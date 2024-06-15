@@ -14,7 +14,7 @@
 ## Install
 
 ```
-npm install @tinytales/_underline
+npm install @senti/_underline
 ```
 
 <br />
