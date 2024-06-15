@@ -1,5 +1,5 @@
 {
-  "name": "@tinytales/_underline",
+  "name": "@senti/_underline",
   "version": "0.4.0",
   "description": "A GUI library for humans, inspired by DearImGui and CSS",
   "author": "Cristian Cornea",
@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tiny-tales/_underline.git"
+    "url": "git+https://github.com/senti-studio/_underline.git"
   },
   "keywords": [
     "pixijs",
